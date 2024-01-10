@@ -1,0 +1,381 @@
+genus,species,infrarank,infraspecies,stz,ind_stz,contract,priority,priority_source
+Astragalus,lonchocarpus,,,Climate-matched species specific,"1,2,3,4",COPL,High,BLM
+Bouteloua,gracilis,,,Climate-matched species specific,"5,8,10",COPL,High,BLM
+Cleome,lutea,,,Landscape genetic,"1,2",COPL,High,BLM
+Heliomeris,multiflora,,,Climate-matched species specific,"9,10",COPL,High,BLM
+Macheranthera,canescens,,,Landscape genetic,"1,2",COPL,High,BLM
+Macheranthera,tanacetifolia,,,Desert SW provisional,"1,2,3,4,8",COPL,High,BLM
+Packera,multilobata,,,Desert SW provisional,"1,2,3,4,8",COPL,High,BLM
+Pascopyrum,smithii,,,Desert SW provisional,"1,2,3,4",COPL,High,BLM
+Pleuraphis,jamesii,,,Landscape genetic,3,COPL,High,BLM
+Sporobolus,cryptandrus,,,Landscape genetic,2,COPL,High,BLM
+Astragalus,lentiginosus,var. ,chartaceus,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Aristida,purpurea,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Chaenactis,douglasii,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Cleome,serrulata,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Cymopterus,bulbosus,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Cymopterus,purpureus,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Eriogonum,cernuum,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Eriogonum,fusiforme,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Eriogonum,shockleyi,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Helianthus,annuus,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Heliomeris,multiflora,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Hesperostipa,comata,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Heterotheca,villosa,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Lomatium,grayi,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Lomatium,dissectum,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Machaeranthera,gracilis,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Machaeranthera,pinnatifida,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Mentzelia,albicaulis,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Mentzelia,multiflora,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Penstemon,palmeri,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Phacelia,crenulata,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Pseudoroegneria,spicata,,,Desert SW provisional,"1,2,3,4",COPL,Medium,BLM
+Senecio,spartioides,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Sphaeralcea,coccinea,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Sporobolus,airoides,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Stanleya,pinnata,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Thelesperma,megapotamicum,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Vulpia,octoflora,,,Desert SW provisional,"1,2,3,4,8",COPL,Medium,BLM
+Achnatherum,hymenoides,,,Empirical,"M1H2L3,L1H2H3",COPL,Low,BLM
+Elymus,elymoides,,,Climate-matched species specific,"3,4",COPL,Low,BLM
+Koeleria,macrantha,,,Climate-matched species specific,"1,2",COPL,Low,BLM
+Achnatherum,hymenoides,,,Empirical,"L1L2H3, M1L2H3, M1H2H3",CEDAR CITY,High,BLM
+Elymus,elymoides,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-12",CEDAR CITY,High,BLM
+Hesperostipa,comata,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-12",CEDAR CITY,High,BLM
+Poa,secunda,,,Empirical,"M1L2L3M M1H2L3, L1H2L3, L1L2L3",CEDAR CITY,High,BLM
+Chaenactis,douglasii,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-12",CEDAR CITY,High,BLM
+Machaeranthera,canescens,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-12",CEDAR CITY,High,BLM
+Phacelia,hastata,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-12",CEDAR CITY,High,BLM
+Agoseris,glauca,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-12",CEDAR CITY,High,BLM
+Asclepias,speciosa,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-12",CEDAR CITY,High,BLM
+Balsamorhiza,sagittata,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-12",CEDAR CITY,High,BLM
+Crepis,acuminata,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-12",CEDAR CITY,High,BLM
+Eriogonum,ovalifolium,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-12",CEDAR CITY,High,BLM
+Eriogonum,umbellatum,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-12",CEDAR CITY,High,BLM
+Lomatium,dissectum,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-12",CEDAR CITY,High,BLM
+Lomatium,nudicaule,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-12",CEDAR CITY,High,BLM
+Sphaeralcea,grossulariifolia,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-12",CEDAR CITY,High,BLM
+Sphaeralcea,munroana,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-12",CEDAR CITY,High,BLM
+Achnatherum,thurberianum,,,Empirical,"4, 8, 5",CEDAR CITY,Low,BLM
+Festuca,idahoensis,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-12",CEDAR CITY,Low,BLM
+Koeleria,macrantha,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-12",CEDAR CITY,Low,BLM
+Pleuraphis,jamesii,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-12",CEDAR CITY,Low,BLM
+Pseudoroegneria,spicata,,,Empirical,"3a, 4, 2a, 6a",CEDAR CITY,Low,BLM
+Sporobolus,cryptandrus,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-12",CEDAR CITY,Low,BLM
+Achillea,millefolium,var.,occidentalis,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-12",CEDAR CITY,Low,BLM
+Agoseris,grandiflora,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-12",CEDAR CITY,Low,BLM
+Asclepias,fascicularis,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-13",CEDAR CITY,Low,BLM
+Astragalus,eremiticus,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-14",CEDAR CITY,Low,BLM
+Astragalus,filipes,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-15",CEDAR CITY,Low,BLM
+Balsamorhiza,hookeri,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-16",CEDAR CITY,Low,BLM
+Cleome,lutea,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-17",CEDAR CITY,Low,BLM
+Cleome,serrulata,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-18",CEDAR CITY,Low,BLM
+Crepis,occidentalis,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-19",CEDAR CITY,Low,BLM
+Dalea,ornata,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-20",CEDAR CITY,Low,BLM
+Dalea,searlsiae,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-21",CEDAR CITY,Low,BLM
+Erigeron,bloomeri,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-22",CEDAR CITY,Low,BLM
+Erigeron,linearis,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-23",CEDAR CITY,Low,BLM
+Erigeron,pumilus,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-24",CEDAR CITY,Low,BLM
+Erigeron,speciosus,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-25",CEDAR CITY,Low,BLM
+Eriogonum,heracleoides,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-26",CEDAR CITY,Low,BLM
+Heliomeris,multiflora,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-27",CEDAR CITY,Low,BLM
+Lomatium,triternatum,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-28",CEDAR CITY,Low,BLM
+Penstemon,acuminatus,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-29",CEDAR CITY,Low,BLM
+Penstemon,deustus,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-30",CEDAR CITY,Low,BLM
+Penstemon,eatonii,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-31",CEDAR CITY,Low,BLM
+Penstemon,pachyphyllus,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-32",CEDAR CITY,Low,BLM
+Penstemon,palmeri,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-33",CEDAR CITY,Low,BLM
+Penstemon,speciosus,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-34",CEDAR CITY,Low,BLM
+Sphaeralcea,ambigua,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-35",CEDAR CITY,Low,BLM
+Sphaeralcea,coccinea,,,Provisional,"15-20 Deg/3-6, 15-20 Deg/6-12, 10-15 Deg/6-12, 20-25 Deg. F./3-6, 20-25 Deg. F./6-36",CEDAR CITY,Low,BLM
+Collinsia,grandiflora,,,Provisional,35 -40 Deg. F. / 2 -3,UKIAH,Medium,Reed
+Collinsia,heterophylla,,,Provisional,35 -40 Deg. F. / 2 -3,UKIAH,Low,Reed
+Anaphalis,margaritacea,,,Provisional,40 -45 Deg. F. / 2 -3,UKIAH,Low,Reed
+Aclepias,cordifolia,,,Provisional,any,UKIAH,Low,Reed
+Asclepias,eriocarpa,,,Provisional,any,UKIAH,Low,Reed
+Asclepias,fascicularis,,,Provisional,any,UKIAH,Low,Reed
+Asclepias,solanoana,,,Provisional,any,UKIAH,Low,Reed
+Asclepias,speciosa,,,Provisional,any,UKIAH,Low,Reed
+Dudleya,sp.***,,,Provisional,any,UKIAH,Low,Reed
+Grindelia,stricta,,,Provisional,40 -45 Deg. F. / 2 -3,UKIAH,Low,Reed
+Lomatium,macrocarpum,,,Provisional,35 -40 Deg. F. / 2 -3,UKIAH,High,Reed
+Symphyotrichum,chilense,,,Provisional,40 -45 Deg. F. / 2 -3,UKIAH,Medium,Reed
+Danthonia,californica,,,Provisional,"35 -40 Deg. F. / 2 -3, 40 -45 Deg. F. / 2 -3",UKIAH,High,Reed
+Deschampsia,cespitosa,,,Provisional,40 -45 Deg. F. / 2 -3,UKIAH,High,Reed
+Eleocharis,macrostachya,,,Provisional,35 -40 Deg. F. / 2 -3,UKIAH,Medium,Reed
+Elymus,multisetus,,,Provisional,35 -40 Deg. F. / 2 -3,UKIAH,High,Reed
+Pickeringia,montana,,,Provisional,35 -40 Deg. F. / 2 -3,UKIAH,Medium,Reed
+Arctostaphylos,spp.,,,Provisional,40 -45 Deg. F. / 2 -3,UKIAH,Low,Reed
+Bromus,sitchensis,,,Provisional,40 -45 Deg. F. / 2 -3,UKIAH,High,Reed
+Baccharis,pilularis,,,Provisional,40 -45 Deg. F. / 2 -3,UKIAH,Low,Reed
+Calamagrostis,nutkaensis,,,Provisional,40 -45 Deg. F. / 2 -3,UKIAH,High,Reed
+Cercis,occidentalis,,,Provisional,40 -45 Deg. F. / 2 -3,UKIAH,Low,Reed
+Eriogonum,latifolium,,,Provisional,40 -45 Deg. F. / 2 -3,UKIAH,High,Reed
+Lupinus,arboreus,,,Provisional,40 -45 Deg. F. / 2 -3,UKIAH,High,Reed
+Clarkia,purpurea,,,Provisional,30 -35 Deg. F. / 3 -6; 35 -40 Deg. F. / < 2; 35-40 Deg. F; 3-6,REDDING,Medium,Reed
+Clarkia,rhomboidea,,,Provisional,25 -30 Deg. F. / 2 -3; 30 -35 Deg. F. / 2 -3; 35 -40 Deg. F. / < 2; 35-40 Deg. F; 3-6 ,REDDING,Medium,Reed
+Helianthus,annuus,,,Provisional,35-40 Deg. F; 3-6 ,REDDING,High,Reed
+Madia,elegans,,,Provisional,30 -35 Deg. F. / 2 -3; 30 -35 Deg. F. / 3 -6; 35 -40 Deg. F. / < 2; 35-40 Deg. F; 3-6 ,REDDING,Medium,Reed
+Madia,gracilis,,,Provisional,30 -35 Deg. F. / 2 -3; 30 -35 Deg. F. / 3 -6; 35 -40 Deg. F. / < 2; 35-40 Deg. F; 3-6 ,REDDING,Medium,Reed
+Deschampsia,danthonioides,,,Provisional,30 -35 Deg. F. / 2 -3; 35-40 Deg. F; 3-6 ,REDDING,High,Reed
+Vulpia,microstachys,,,Provisional,25 -30 Deg. F. / 2 -3; 30 -35 Deg. F. / < 2; 30 -35 Deg. F. / 2 -3; 30 -35 Deg. F. / 3 -6; 35 -40 Deg. F. / 3 -6; 35-40 Deg. F; 3-6,REDDING,High,Reed
+Lupinus,bicolor,,,Provisional,25 -30 Deg. F. / 2 -3; 30 -35 Deg. F. / 2 -3; 30-35 Deg. F. / 3 -6; 35-40 Deg. F; 3-6 ,REDDING,Medium,Reed
+Achillea,millefolium,,,Provisional,25 -30 Deg. F. / 3 -6; 30 -35 Deg. F. / < 2; 35-40 Deg. F; 3-6 ,REDDING,Medium,Reed
+Artemisia,douglasiana,,,Provisional,35-40 Deg. F; 3-6 ,REDDING,Medium,Reed
+Asclepias,fascicularis,,,Provisional,30 -35 Deg. F. / 2 -3; 30 -35 Deg. F. / 3 -6; 35-40 Deg. F; 3-6,REDDING,Low,Reed
+Asclepias,speciosa,,,Provisional,30 -35 Deg. F. / 3 -6; 35-40 Deg. F; 3-6,REDDING,Low,Reed
+Asclepias,Spp.***,,,Provisional,25 -30 Deg. F. / 2 -3; 30 -35 Deg. F. / 2 -3; 35-40 Deg. F; 3-6 ,REDDING,Low,Reed
+Asclepias,cordifolia,,,Provisional,25 -30 Deg. F. / 2 -3; 30 -35 Deg. F. / 2 -3; 35-40 Deg. F; 3-6 ,REDDING,Low,Reed
+Asclepias,eriocarpa,,,Provisional,25 -30 Deg. F. / 2 -3; 30 -35 Deg. F. / 2 -3; 35-40 Deg. F; 3-6 ,REDDING,Low,Reed
+Asclepias,fascicularis,,,Provisional,25 -30 Deg. F. / 2 -3; 30 -35 Deg. F. / 2 -3; 35-40 Deg. F; 3-6 ,REDDING,Low,Reed
+Asclepias,speciosa,,,Provisional,25 -30 Deg. F. / 2 -3; 30 -35 Deg. F. / 2 -3; 35-40 Deg. F; 3-6 ,REDDING,Low,Reed
+Dudleya,cymosa,,,Provisional,any,REDDING,Low,Reed
+Eriophyllum,lanatum,,,Provisional,25 -30 Deg. F. / 2 -3; 30 -35 Deg. F. / < 2; 30 -35 Deg. F. / 2 -3; 30 -35 Deg. F. / 3 -6; 35 -40 Deg. F. / 2 -3; 35-40 Deg. F; 3-6 ,REDDING,High,Reed
+Solidago,velutina,,,Provisional,30 -35 Deg. F. / 3 -6; 35-40 Deg. F; 3-6; 35 –40 Deg. F/ 2 –3,REDDING,Low,Reed
+Grindelia,camporum,,,Provisional,35 -40 Deg. F. / 3 -6; 35-40 Deg. F; 3-6 ,REDDING,Low,Reed
+Mentzelia,laevicaulis,,,Provisional,30 -35 Deg. F. / 2 -3; 35-40 Deg. F; 3-6,REDDING,High,Reed
+Urtica,dioica,,,Provisional,35-40 Deg. F; 3-6 ,REDDING,Low,Reed
+Achnatherum,lemmonii,,,Provisional,25 –30 Deg. F/ 2 3; 30 -35 Deg. F. / 2 -3; 35-40 Deg. F; 3-6 ,REDDING,High,Reed
+Bromus,carinatus,,,Provisional,25 -30 Deg. F. / 2 -3; 30 -35 Deg. F. / 2 -3; 35 -40 Deg. F. / 2 -3; 35-40 Deg. F; 3-6,REDDING,High,Reed
+Elymus,elymoides,,,Provisional,35-40 Deg. F; 3-6 ,REDDING,High,Reed
+Elymus,glaucus,,,Provisional,30 -35 Deg. F. / 2 -3; 30 -35 Deg. F. / 3 -6; 35-40 Deg. F; 3-6 ,REDDING,High,Reed
+Muhlenbergia,rigens,,,Provisional,35-40 Deg. F; 3-6 ,REDDING,High,Reed
+Poa,secunda,,,Provisional,25 -30 Deg. F. / 2 -3; 30 -35 Deg. F. / < 2; 30 -35 Deg. F. / 2 -3; 30 -35 Deg. F. / 3 -6; 35 -40 Deg. F. 3/ 3 -6; 35-40 Deg. F; 3-6,REDDING,High,Reed
+Aristolochia,californica,,,Provisional,35 -40 Deg. F. / < 2; 35 -40 Deg. F. / 2 -3; 35-40 Deg. F; 3-6 ,REDDING,Medium,Reed
+Baccharis,pilusaris,,,Provisional,35-40 Deg. F; 3-6 ,REDDING,Low,Reed
+Baccharis,salicifolia,,,Provisional,35-40 Deg. F; 3-6 ,REDDING,Low,Reed
+Cercis,occidentalis,,,Provisional,25 -30 Deg. F. / 2 -3; 30 -35 Deg. F. / < 2; 30 -35 Deg. F. / 2 -3; 30 -35 Deg. F. / 3 -6; 35 -40 Deg. F. / < 2; 35 -40 Deg. F. / 2 -3; 35-40 Deg. F; 3-6,REDDING,Low,Reed
+Clematis,ligusticifolia,,,Provisional,30 -35 Deg. F. / 2 -3; 30 -35 Deg. F. / 3 -6; 35-40 Deg. F; 3-6,REDDING,Low,Reed
+Rhamnus,californica,,,Provisional,35 -40 Deg. F. / < 2; 35-40 Deg. F; 3-6 ,REDDING,Low,Reed
+Rosa,californica,,,Provisional,35 -40 Deg. F. / 2 -3; 35-40 Deg. F; 3-6 ,REDDING,Medium,Reed
+Rubus,ursinus,,,Provisional,30 -35 Deg. F. / 3 -6; 35 -40 Deg. F. / < 2; 35-40 Deg. F; 3-6 ,REDDING,Medium,Reed
+Sambucus,mexicana,,,Provisional,35-40 Deg. F; 3-6 ,REDDING,Low,Reed
+Acer,negundo,,,Provisional,35-40 Deg. F; 3-6 ,REDDING,Medium,Reed
+Fraxinus,latifolia,,,Provisional,30 -35 Deg. F. / 3 -6; 35 -40 Deg. F. / 2 -3; 35-40 Deg. F; 3-6,REDDING,Medium,Reed
+Plantanus,racemosa,,,Provisional,35-40 Deg. F; 3-6 ,REDDING,Medium,Reed
+Nassella,pulchra,,,Provisional,35-40 Deg. F; 3-6 ,REDDING,High,Reed
+Leymus,triticoides,,,Provisional,30 -35 Deg. F. / 3 -6; 35-40 Deg. F; 3-6 ,REDDING,High,Reed
+Hordeum,brachyantherum,,,Provisional,35-40 Deg. F; 3-6 ,REDDING,High,Reed
+Cleome,lutea,,,Provisional,any,NORTHEAST,High,Reed
+Phacelia,linearis,,,Provisional,15-20/6-12; 20-25/6-12,NORTHEAST,Low,Reed
+Agoseris,glauca,,,Provisional,any,NORTHEAST,High,Reed
+Agoseris,parviflora,,,Provisional,15-20/6-12; 20-25/6-12,NORTHEAST,Medium,Reed
+Astragalus,filipes,,,Provisional,15-20/6-12; 20-25/6-12,NORTHEAST,High,Reed
+Astragalus,whitneyi,,,Provisional,15-20/6-12; 20-25/6-12,NORTHEAST,Medium,Reed
+Balsamorhiza,hookeri,,,Provisional,15-20/6-12; 20-25/6-12,NORTHEAST,High,Reed
+Balsamorhiza,sagitatta,,,Provisional,15-20/6-12; 20-25/6-12,NORTHEAST,High,Reed
+Balsamorhiza,serrata,,,Provisional,15-20/6-12; 20-25/6-12,NORTHEAST,Medium,Reed
+Crepis,acuminata,,,Provisional,15-20/6-12; 20-25/6-12,NORTHEAST,High,Reed
+Crepis,occidentalis,,,Provisional,15-20/6-12; 20-25/6-12,NORTHEAST,High,Reed
+Eriogonum,ovalifolium,,,Provisional,15-20/6-12; 20-25/6-12,NORTHEAST,High,Reed
+Eriogonum,strictum,,,Provisional,any,NORTHEAST,Medium,Reed
+Eriophyllum,lanatum,,,Provisional,15-20/6-12; 20-25/6-12,NORTHEAST,Medium,Reed
+Erythranthe,guttata,,,Provisional,any,NORTHEAST,Low,Reed
+Lomatium,nevadensis,,,Provisional,any,NORTHEAST,High,Reed
+Lomatium,nudicaule,,,Provisional,15-20/6-12; 20-25/6-12,NORTHEAST,High,Reed
+Lomatium,triternatum,,,Provisional,15-20/6-12; 20-25/6-12,NORTHEAST,High,Reed
+Phacelia,hastata,,,Provisional,15-20/6-12; 20-25/6-12,NORTHEAST,High,Reed
+Phacelia,heterophylla,,,Provisional,15-20/6-12; 20-25/6-12,NORTHEAST,Medium,Reed
+Senecio,integerrimus,,,Provisional,15-20/6-12; 20-25/6-12,NORTHEAST,Medium,Reed
+Achnatherum,hymenoides,,,Provisional,any,NORTHEAST,High,Reed
+Achnatherum,occidentale,,,Provisional,any,NORTHEAST,High,Reed
+Achnatherum,thurberianum,,,Empirical,"2, 5, 8",NORTHEAST,High,Reed
+Carex,nebrascensis,,,Provisional,any,NORTHEAST,Medium,Reed
+Distichlis,spicata,,,Provisional,any,NORTHEAST,High,Reed
+Elymus,elymoides,,,Empirical,"5, 6, 7, 8, 10",NORTHEAST,High,Reed
+Festuca,idahoensis,,,Provisional,any,NORTHEAST,High,Reed
+Koeleria,macrantha,,,Provisional,any,NORTHEAST,High,Reed
+Leymus,cinereus,,,Empirical,"3, 9",NORTHEAST,High,Reed
+Poa,secunda,,,Empirical,"M1L2L3, M1H2L3, L1L2L3",NORTHEAST,High,Reed
+Pseudoroegneria,spicata,,,Empirical,"1, 3a, 4, 6a, 7b, 5",NORTHEAST,High,Reed
+Atriplex,canescens,,,Provisional,15-20/6-12; 20-25/6-12,NORTHEAST,Low,Reed
+Atriplex,confertifolia,,,Provisional,15-20/6-12; 20-25/6-12,NORTHEAST,Low,Reed
+Cercocarpus,ledifolius,,,Provisional,NOT 25 Deg. F. / 3 -6,NORTHEAST,Medium,Reed
+Eriogonum,umbellatum,,,Provisional,15-20/6-12; 20-25/6-12,NORTHEAST,High,Reed
+Purshia,tridentata,,,Provisional,15-20/6-12; 20-25/6-12,NORTHEAST,Medium,Reed
+Fraxinus,latifolia,,,Provisional,any,NORTHEAST,Low,Reed
+Eriogonum,microthecum,,,Provisional,any,NORTHEAST,High,Reed
+Perideridia,bolanderi,,,Provisional,any,NORTHEAST,Medium,Reed
+Achnatherum,hymenoides,,,Empirical,"M1L2H3, L1L2H3",BISHOP,High,Reed
+Achnatherum,hymenoides,,,Provisional,15-20 Deg. /6-12,BISHOP,High,Reed
+Achnatherum,occidentale,,,Provisional,any,BISHOP,High,Reed
+Achnatherum,speciosum,,,Provisional,any,BISHOP,High,Reed
+Achnatherum,thurberianum,,,Provisional,any,BISHOP,High,Reed
+Elymus,elymoides,,,Empirical,"2, 5, 7, 10",BISHOP,High,Reed
+Hesperostipa,comata,,,Provisional,any,BISHOP,High,Reed
+Koeleria,macrantha,,,Provisional,any,BISHOP,High,Reed
+Leymus,cinereus,,,Empirical,"2, 5, ",BISHOP,High,Reed
+Poa,secunda,,,Empirical,"L1L2L3, M1L2L3",BISHOP,High,Reed
+Acamptopappus,sphaerocephalus,,,Provisional,any,BISHOP,Medium,Reed
+Ambrosia,dumosa,,,Provisional,any,BISHOP,Low,Reed
+Artemisia,tridentata,ssp.,tridentata,Provisional,any,BISHOP,Low,Reed
+Artemisia,tridentata,ssp.,vaseyana,Provisional,any,BISHOP,Low,Reed
+Atriplex,canescens,,,Provisional,any,BISHOP,Low,Reed
+Atriplex,confertifolia,,,Provisional,any,BISHOP,Low,Reed
+Atriplex,parryi,,,Provisional,any,BISHOP,Low,Reed
+Atriplex,polycarpa,,,Provisional,any,BISHOP,Low,Reed
+Encelia,actoni,,,Provisional,any,BISHOP,Medium,Reed
+Ericameria,cooperi,,,Provisional,any,BISHOP,Medium,Reed
+Ericameria,teretifolia,,,Provisional,any,BISHOP,Medium,Reed
+Eriogonum,umbellatum,,,Provisional,any,BISHOP,High,Reed
+Kraschennikovia,lanata,,,Provisional,any,BISHOP,Low,Reed
+Purshia,tridentata,,,Provisional,15-20 Deg. /6-12,BISHOP,Low,Reed
+Agoseris,glauca,,,Provisional,any,BISHOP,High,Reed
+Agoseris,parviflora,,,Provisional,any,BISHOP,Medium,Reed
+Apocynum,cannabinum,,,Provisional,any,BISHOP,Low,Reed
+Astragalus,iodanthus,,,Provisional,any,BISHOP,Medium,Reed
+Astragalus,whitneyi,,,Provisional,any,BISHOP,Medium,Reed
+Balsamorhiza,sagitatta,,,Provisional,any,BISHOP,High,Reed
+Cirsium,mohavense,,,Provisional,any,BISHOP,Medium,Reed
+Cirsium,occidentale,,,Provisional,any,BISHOP,Medium,Reed
+Cirsium,acuminata,,,Provisional,any,BISHOP,Medium,Reed
+Crepis,occidentalis,,,Provisional,any,BISHOP,Medium,Reed
+Cryptantha,flavoculata,,,Provisional,any,BISHOP,Medium,Reed
+Dieteria,canescens,,,Provisional,any,BISHOP,High,Reed
+Erigeron,aphanactis,,,Provisional,any,BISHOP,High,Reed
+Erigeron,breweri,,,Provisional,any,BISHOP,Medium,Reed
+Eriogonum,ovalifolium,,,Provisional,any,BISHOP,High,Reed
+Eriophyllum,lanatum,,,Provisional,any,BISHOP,Medium,Reed
+Ionactis,alpina,,,Provisional,any,BISHOP,Mediun,Reed
+Lomatium,dissectum,,,Provisional,any,BISHOP,High,Reed
+Lomatium,nevadense,var.,nevadense,Provisional,any,BISHOP,High,Reed
+Lupinus,argenteus,,,Provisional,any,BISHOP,Mediun,Reed
+Packera,multilobata,,,Provisional,any,BISHOP,High,Reed
+Penstemon,speciosus,,,Provisional,any,BISHOP,High,Reed
+Phacelia,heterophylla,,,Provisional,any,BISHOP,Low,Reed
+Pleiacanthus,spinosus,,,Provisional,any,BISHOP,Medium,Reed
+Senecio,integerrimus,,,Provisional,any,BISHOP,High,Reed
+Stenotus,acaulis,,,Provisional,any,BISHOP,Medium,Reed
+Anisocoma,acaulis,,,Provisional,any,BISHOP,Medium,Reed
+Calycoseris,parryi,,,Provisional,any,BISHOP,Low,Reed
+Chaenactis,fremontii,,,Provisional,any,BISHOP,Medium,Reed
+Chaenactis,douglasii,,,Provisional,any,BISHOP,High,Reed
+Chaenactis,stevioides,,,Provisional,any,BISHOP,Medium,Reed
+Chaenactis,xantiana,,,Provisional,any,BISHOP,Medium,Reed
+Eriophyllum,wallacei,,,Provisional,any,BISHOP,Medium,Reed
+Layia,glandulosa,,,Provisional,any,BISHOP,Medium,Reed
+Malacothrix,glabrata,,,Provisional,any,BISHOP,Medium,Reed
+Phlox,stansburyi,,,Provisional,any,BISHOP,Medium,Reed
+Syntrichopappus,fremontii,,,Provisional,any,BISHOP,Medium,Reed
+Amsinckia,tessellata,,,Provisional,any,BISHOP,Medium,Reed
+Cryptantha,micrantha,,,Provisional,any,BISHOP,Low,Reed
+Cryptantha,pterocarya,,,Provisional,any,BISHOP,Low,Reed
+Lupinus,odoratus,,,Provisional,any,BISHOP,Low,Reed
+Phacelia,bicolor,var.,bicolor,Provisional,any,BISHOP,Low,Reed
+Phacelia,distans,,,Provisional,any,BISHOP,Medium,Reed
+Phacelia,fremontii,,,Provisional,any,BISHOP,Medium,Reed
+Phacelia,humilis,,,Provisional,any,BISHOP,Medium,Reed
+Erigeron,divergens,,,Provisional,any,BISHOP,Low,Reed
+Penstemon,incertus,,,Provisional,any,BISHOP,Medium,Reed
+Stanleya,pinnata,var.,pinnata,Provisional,any,BISHOP,High,Reed
+Fraxinus,velutina,,,Provisional,any,BISHOP,Low,Reed
+Achillea,millefolium,,,Provisional,any,COSUMNES,High,BLM
+Acmispon,americanus,,,Provisional,any,COSUMNES,High,BLM
+Alisma,triviale,,,Provisional,any,COSUMNES,Low,BLM
+Ambrosia,psilostachya,,,Provisional,any,COSUMNES,High,BLM
+Amsinckia,menziesii,,,Provisional,any,COSUMNES,High,BLM
+Aristolochia,californica,,,Provisional,any,COSUMNES,Medium,BLM
+Artemisia,douglasiana,,,Provisional,any,COSUMNES,High,BLM
+Asclepias,fascicularis,,,Provisional,any,COSUMNES,High,BLM
+Baccharis,pilularis,,,Provisional,any,COSUMNES,Low,BLM
+Bidens,frondosa,,,Provisional,any,COSUMNES,Low,BLM
+Brodiaeae,elegans,,,Provisional,any,COSUMNES,High,BLM
+Calandrinia,menziesii,,,Provisional,any,COSUMNES,Low,BLM
+Centromadia,fitchii,,,Provisional,any,COSUMNES,High,BLM
+Centromadia,pungens,,,Provisional,any,COSUMNES,High,BLM
+Cephalanthus,occidentalis,,,Provisional,any,COSUMNES,High,BLM
+Claytonia,perfoliata,,,Provisional,any,COSUMNES,High,BLM
+Clematis,ligusticifolia,,,Provisional,any,COSUMNES,High,BLM
+Croton,setiger,,,Provisional,any,COSUMNES,Low,BLM
+Epilobium,brachycarpum,,,Provisional,any,COSUMNES,High,BLM
+Epilobium,ciliatum,,,Provisional,any,COSUMNES,High,BLM
+Epilobium,densiflorum,,,Provisional,any,COSUMNES,High,BLM
+Erigeron,canadensis,,,Provisional,any,COSUMNES,High,BLM
+Eryngium,aristulatum,,,Provisional,any,COSUMNES,Low,BLM
+Erythranthe,guttata,,,Provisional,any,COSUMNES,High,BLM
+Euthamia,occidentalis,,,Provisional,any,COSUMNES,Low,BLM
+Galium,aparine,,,Provisional,any,COSUMNES,Low,BLM
+Glycyrrhiza,lepidota,,,Provisional,any,COSUMNES,Low,BLM
+Grindelia,camporum,,,Provisional,any,COSUMNES,High,BLM
+Helenium,puberulum,,,Provisional,any,COSUMNES,High,BLM
+Helianthus,annuus,,,Provisional,any,COSUMNES,High,BLM
+Hemizonia,congesta,,,Provisional,any,COSUMNES,High,BLM
+Heterotheca,grandiflora,,,Provisional,any,COSUMNES,High,BLM
+Madia,elegans,,,Provisional,any,COSUMNES,High,BLM
+Malvella,leprosa,,,Provisional,any,COSUMNES,High,BLM
+Mentha,canadensis,,,Provisional,any,COSUMNES,Low,BLM
+Persicaria,amphibia,,,Provisional,any,COSUMNES,High,BLM
+Persicaria,lapathifolia,,,Provisional,any,COSUMNES,Low,BLM
+Phyla,nodiflora,,,Provisional,any,COSUMNES,Low,BLM
+Ranunculus,californicus,,,Provisional,any,COSUMNES,High,BLM
+Rosa,californica,,,Provisional,any,COSUMNES,Low,BLM
+Rubus,ursinus,,,Provisional,any,COSUMNES,Low,BLM
+Rumex,salicifolius,,,Provisional,any,COSUMNES,High,BLM
+Sagittaria,latifolia,,,Provisional,any,COSUMNES,High,BLM
+Sisyrinchium,bellum,,,Provisional,any,COSUMNES,High,BLM
+Solanum,americanum,,,Provisional,any,COSUMNES,Low,BLM
+Symphyotrichum,subulatum,,,Provisional,any,COSUMNES,Low,BLM
+Triteleia,hyacinthina,,,Provisional,any,COSUMNES,High,BLM
+Triteleia,laxa,,,Provisional,any,COSUMNES,High,BLM
+Wyethia,angustifolia,,,Provisional,any,COSUMNES,Low,BLM
+Adenostoma,fasiculatum,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Medium,BLM
+Adenostoma,sparsifolium,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Medium,BLM
+Ambrosia,dumosa,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Low,BLM
+Amsinckia,menziesii,var.,intermedia,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Medium,BLM
+Antirrhinum coulterianum,,,,Provisional,30 - 35 Deg. / 3-6,EL CENTRO,Medium,BLM
+Arctostaphylos,glauca,,,Provisional,30 - 35 Deg. / 3-6,EL CENTRO,Medium,BLM
+Artemisia,tridentata,,,Provisional,30 - 35 Deg. / 3-6,EL CENTRO,Low,BLM
+Asclepias,albicans,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,High,BLM
+Asclepias,erosa,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,High,BLM
+Asclepias,fascicularis,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,High,BLM
+Asclepias,subulata,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,High,BLM
+Bebbia,juncea,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Medium,BLM
+Calliandra,eriophylla,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,High,BLM
+Camissonia,strigulosa,,,Provisional,30 - 35 Deg. / 3-6,EL CENTRO,Low,BLM
+Ceanothus,Spp.***,,,Provisional,30 - 35 Deg. / 3-6,EL CENTRO,Medium,BLM
+Chaenactis,artemisifolia,,,Provisional,30 - 35 Deg. / 3-6,EL CENTRO,Medium,BLM
+Chaenactis,glabriuscula,,,Provisional,30 - 35 Deg. / 3-6,EL CENTRO,Medium,BLM
+Collinsia,concolor,,,Provisional,30 - 35 Deg. / 3-6,EL CENTRO,Low,BLM
+Condalia,globosa,var.,pubescens,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Medium,BLM
+Cordylanthus,rigidus,,,Provisional,30 - 35 Deg. / 3-6,EL CENTRO,Low,BLM
+Croton,californicus,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Medium,BLM
+Cryptantha,intermedia,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Medium,BLM
+Cryptantha,micrantha,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Medium,BLM
+Cylindropuntia,ramosissima,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Low,BLM
+Cylindropuntia,acanthocarpa,var.,acanthocarpa,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Low,BLM
+Cylindropuntia,bigelovii,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Low,BLM
+Dalea,mollis,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Medium,BLM
+Dichelostemma,capitatum,,,Provisional,30 - 35 Deg. / 3-6,EL CENTRO,Low,BLM
+Ephedra,californica,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Medium,BLM
+Ericamerica,brachylepsis,,,Provisional,30 - 35 Deg. / 3-6,EL CENTRO,High,BLM
+Ericameria,linearifolia,,,Provisional,30 - 35 Deg. / 3-6,EL CENTRO,High,BLM
+Eriogonum,fasciculatum,var.,polifolium,Provisional,30 - 35 Deg. / 3-6,EL CENTRO,High,BLM
+Eriophyllum,confertiflorum,var.,confertiflorum,Provisional,30 - 35 Deg. / 3-6,EL CENTRO,Low,BLM
+Ferocactus,cylindraceus,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Medium,BLM
+Fourquieria,splendens,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Medium,BLM
+Fraxinus,velutina,,,Provisional,30 - 35 Deg. / 3-6,EL CENTRO,Medium,BLM
+Garaea,canescens,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Medium,BLM
+Heliotropium,curassavicum,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,High,BLM
+Hilaria,rigida,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,High,BLM
+Hymenoclea,salsola,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Medium,BLM
+Hyptis,emoryi,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Medium,BLM
+Krameria,bicolor,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,High,BLM
+Larrea,tridentata,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,High,BLM
+Lasthenia,gracilis,,,Provisional,30 - 35 Deg. / 3-6,EL CENTRO,Medium,BLM
+Layia,glandulosa,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Medium,BLM
+Lycium,andersonii,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Medium,BLM
+Olneya,tesota,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,High,BLM
+Parkinsonia,florida,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,High,BLM
+Peucephyllum,schottii,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Low,BLM
+Phacelia,cicutaria,var. ,hispida,Provisional,30 - 35 Deg. / 3-6,EL CENTRO,Medium,BLM
+Plantago,erecta,,,Provisional,30 - 35 Deg. / 3-6,EL CENTRO,Medium,BLM
+Plantago,ovata,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Medium,BLM
+Prosopis,pubescens,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,High,BLM
+Prosopis,glandulosa,var.,torreyana,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,High,BLM
+Psathyrotes,ramosissima,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Medium,BLM
+Psorothamnus,schottii,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,High,BLM
+Psorothamnus,spinosus,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Medium,BLM
+Salvia,columbrariae,,,Provisional,30 - 35 Deg. / 3-6,EL CENTRO,High,BLM
+Senegalia,greggii,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,High,BLM
+Sphaeralcea,ambigua,,,Provisional,40 - 45 Deg. F. / > 30,EL CENTRO,Medium,BLM
