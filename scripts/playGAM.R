@@ -33,7 +33,9 @@ oz <- read.csv('https://raw.githubusercontent.com/selva86/datasets/master/ozone.
 oz.gam <- mgcv::gam(ozone_reading ~ s(Pressure_gradient, k=5, bs='tp') +
                 s(Wind_speed, k=5, bs='tp') +
                 s(Temperature_Sandburg, k=5, bs='tp'), data=oz,
-              method='REML', select=TRUE)
+              method='GCV', select=TRUE)
+
+# METHODS GCV, AND AIC ARE BEST FOR ATTEMPTING TO PREDICT RESULTS. 
 
 par(mar=c(4,4,2,2))
 plot(oz.gam)
