@@ -45,7 +45,11 @@ We will also download soilgrids 250m data for bulk density. Bulk density is defi
 ```{r download soilgrids data, eval = F}
 
 library(gdalUtilities)
+
 chelsa <- rast("../data/spatial/processed/CHELSA.tif")
+domain <- rast(nrows = 1, ncols = 1) # create a big empty raster, you can go in through sf too. 
+ext(domain) <- c( -125.5, -100, 25,  50) # set the extent
+crs(domain) <- "EPSG:4326"
 igh='+proj=igh +lat_0=0 +lon_0=0 +datum=WGS84 +units=m +no_defs'
 bb1 <- as.polygons(domain) |>  # convert to vector data
   st_as_sf() |> # convert to simple feature
@@ -63,7 +67,11 @@ gdal_translate(paste0(sg_url,'bdod/bdod_15-30cm_mean.vrt'),
 
 bdod <- rast('../data/spatial/crop_roi_igh_r.tif')
 bdod <- project(bdod, chelsa, align = TRUE, threads = 20, 
-                filename = '../data/spatial/processed/bulk_density.tif')
+                filename = '../data/spatial/processed/bulk_density.tif', overwrite = T)
+
+bdod <- crop(bdod, chelsa)
+names(bdod) <- 'bulk_density'
+writeRaster(bdod, filename = '../data/spatial/processed/bulk_density.tif', overwrite = T)
 
 rm(igh, bb1, bb, sg_url, bdod)
 ```
@@ -74,7 +82,19 @@ cti <- rast('~/Downloads/dtm_cti_merit.dem_m_250m_s0..0cm_2018_v1.0.tif') # 6gb 
 cti <- crop(cti, domain)
 cti <- resample(cti, chelsa, 
                 filename = '../data/spatial/processed/cti.tif', threads = 20)
+cti <- rast('../data/spatial/processed/cti.tif')
+names(cti) <- 'cti'
+writeRaster(cti, '../data/spatial/processed/cti.tif', overwrite = TRUE)
 
 rm(cti)
 ```
+
+the growing degrees data use NA instead of 0 or one for areas without freezing temps
+```{r rename layers and replace NA, eval = F}
+che <- rast('../data/spatial/processed/CHELSA.tif')
+che <- subst(che, NA, 0)
+names(che) <- gsub('CHELSA_|_1981.*$', '', names(che))
+writeRaster(che, '../data/spatial/processed/CHELSA.tif', overwrite = TRUE)
+```
+
 
