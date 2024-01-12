@@ -2,17 +2,22 @@
 #' collect all scanned images of a species from idigbio after a certain date
 #' @param x Species name
 #' @param date date of collection (e.g. '1979-01-01', the year many climate data sets start)
+#' @param basepts number of base points
+#' @param overpts number of oversample points
+#' @param mindist minimum distance between points
 #' @example aslo <- specimen_sampler('Astragalus lonchocarpus', '1979-01-01', 
-#'      n_base = 70, n_over = 30, mindis = 2000)
+#'      basepts = 70, overpts = 30, mindis = 2000)
 #' @param ... further arguments passed onto spsurvey::grts 
-specimen_sampler <- function(x, date, ...){
+specimen_sampler <- function(x, date, basepts, mindist, overpts, ...){
   
   text_result <- ridigbio::idig_search(rq = list(scientificname = x)) |> 
     dplyr::select(uuid, scientificname, datecollected, collector, geopoint.lon, geopoint.lat) |> 
-    tidyr::drop_na(geopoint.lon, geopoint.lat) |> 
+    tidyr::drop_na(geopoint.lon, geopoint.lat, datecollected) |> 
     dplyr::mutate(datecollected = as.Date(datecollected)) |> 
     dplyr::filter(datecollected > date) |> # sensing data comes on line here
     dplyr::arrange(datecollected)
+  
+  if(nrow(text_result) > 2){
   
   media_result <- ridigbio::idig_search_media(
     rq = list(scientificname = x), mq = TRUE) |>
@@ -27,22 +32,28 @@ specimen_sampler <- function(x, date, ...){
       collector = gsub("collector[(s):]", '', collector), 
       collector = gsub(';.*$|,.*$', '', collector),
       doy = as.numeric(lubridate::yday(datecollected))
-      ) |>
+    ) |>
     dplyr::select(scientificname, accessuri, datecollected, collector, doy, uuid)
   
-  samples <- spsurvey::grts(
-      sf::st_transform(records, 5070), ...,
-        seltype = "proportional", aux_var = 'doy')
-  
-  samples <- dplyr::bind_rows(
-    samples[['sites_base']], samples[['sites_over']]
-      ) |>
-    dplyr::mutate(
-      siteID = paste0(siteuse, gsub('[A-z]', '', siteID)), 
-      collector = gsub(';.*$|,.*$', '', collector)
+    if(nrow(records) < 100){basepts <- (nrow(records) -1); overpts <- 1}
+    
+    samples <- spsurvey::grts(
+      sf::st_transform(records, 5070), n_base = basepts, n_over = overpts, mindis = mindist, ...,
+      seltype = "proportional", aux_var = 'doy')
+    
+    samples <- dplyr::bind_rows(
+      samples[['sites_base']], samples[['sites_over']]
     ) |>
-    dplyr::select(siteID, wgt, scientificname:geometry)
-  
-  return(samples)
+      dplyr::mutate(
+        siteID = paste0(siteuse, gsub('[A-z]', '', siteID)), 
+        collector = gsub(';.*$|,.*$', '', collector)
+      ) |>
+      dplyr::select(siteID, wgt, scientificname:geometry)
+    
+    return(samples)
+  } else{
+    'Taxon Not Found'
+  }
   
 }
+

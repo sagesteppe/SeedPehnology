@@ -1,0 +1,59 @@
+---
+title: "Download and Process Independent Variables"
+author: "steppe"
+date: "2024-01-12"
+output: html_document
+---
+
+We have a named list of variables which we are interested in. 
+We will download each of these variables using curl. 
+```{sh download Chelsa climate variables, eval = F}
+URL_LIST=$(<../data/raw/envidatS3paths.txt)
+## echo $URL_LIST | xargs -n 1 -P 4 wget -q -P ../data/spatial/
+```
+
+```{r}
+library(terra)
+library(sf)
+```
+
+```{r define domain for cropping}
+domain <- rast(nrows = 1, ncols = 1) # create a big empty raster, you can go in through sf too. 
+ext(domain) <- c( -125.5, -100, 27,  50) # set the extent
+crs(domain) <- "EPSG:4326"
+```
+
+Subset the CHELSA variables to domain of analysis. 
+```{r subset CHELSA, eval  = F}
+
+p <- '../data/spatial/raw'
+chelsa <- rast(file.path(p, list.files(p)))
+domain <- project(domain, crs(chelsa))
+chelsa <- crop(chelsa, domain)
+
+terra::writeRaster(chelsa, "../data/spatial/processed/CHELSA.tif")
+
+# sudo du -sh /raw ... 2.7 gb
+# sudo du -sh processed  ... 214 MB 
+# big space saver!
+```
+
+We will also download soilgrids 250m data. 
+
+```{r}
+
+
+igh = '+proj=igh +lat_0=0 +lon_0=0 +datum=WGS84 +units=m +no_defs' # proj string for Homolosine projection
+
+domain <- rast(nrows = 1, ncols = 1) # create a big empty raster, you can go in through sf too. 
+ext(domain) <- c( -125.5, -100, 27,  50) # set the extent
+crs(domain) <- "EPSG:4326" # define the projection
+domain <- as.polygons(domain) |>  # convert to vector data
+  st_as_sf() |> # convert to simple feature
+  st_transform(igh) %>% 
+  st_bbox()
+
+
+```
+
+

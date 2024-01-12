@@ -1,0 +1,49 @@
+---
+title: "Species to model Phenology"
+author: "steppe"
+date: "2024-01-10"
+output: html_document
+---
+
+
+```{r}
+library(tidyverse)
+source('functions.R')
+```
+
+```{r import species}
+
+spp <- read.csv('../data/raw/2024species-Priorities.csv') |>
+  unite('scientific_name',  genus:infraspecies, na.rm = TRUE, sep = ' ', remove = F) |>
+  mutate(
+    scientific_name = trimws(scientific_name)) |>
+  select(scientific_name, genus, species, contract, priority, priority_source) |>
+  count(scientific_name, priority)
+
+```
+
+```{r identify high priority species}
+high_p <- spp %>% 
+  filter(priority == 'High') %>% 
+  arrange(-n)
+```
+
+```{r pull sheets for high priority species}
+
+specs1 <- lapply(high_p$scientific_name, specimen_sampler, 
+                 date = '1970-01-01', basepts = 70, overpts = 30, mindist = 2500)
+
+specs1 <- specs1[ lapply(specs1, typeof) == 'list' ] |> bind_rows()
+
+dir.create('../data/processed/high_priority_sheets')
+sf::st_write(specs1, '../data/processed/high_priority_sheets/high_priority_sheets.shp', quiet = TRUE)
+
+specs1 %>%
+  sf::st_drop_geometry() %>% 
+  select(siteID, scientificname, accessuri) %>% 
+  mutate(Pct_Bud = "", Pct_Anthesis = "", Pct_PreFruit = "",
+         Pct_Fruit = "", Pct_Dropped = "") %>% 
+  write.csv( '../data/processed/high_priority_sheets.csv', row.names = F)
+
+```
+
