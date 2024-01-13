@@ -1,4 +1,3 @@
-library(MuMIn)
 library(sf)
 library(tidyverse)
 library(mgcv)
@@ -8,7 +7,7 @@ setwd('~/Documents/SeedPhenology/scripts')
 achy <- read.csv('../data/processed/high_priority_sheets.csv') %>% 
   filter(scientificname == 'achnatherum hymenoides')
 
-
+names(preds)
 # subset to scored sheets, and add '0' when a phenophasewas not observed. 
 achy <- achy %>% 
   dplyr::select(-accessuri) |>
@@ -40,8 +39,9 @@ achy <- extract(preds, achy, bind = TRUE) |>
 
 ## we don't have much scored data, so we will impute NA bulk density data ##
 achy <- achy |>
-  mutate(bulk_density = ifelse(is.na(bulk_density), 
-                               mean(bulk_density, na.rm = TRUE), bulk_density), 
+  mutate(
+    across(
+      doy:cti, ~ ifelse(is.na(.x), mean(.x, na.rm = TRUE), .x)),
          across(Pct_Bud:Pct_Dropped, ~ ifelse(.x > 0, 1, .x)))
 
 
@@ -64,22 +64,19 @@ lmProfile <- rfe(inde, dep, # y are outcomes
                  rank = TRUE, 
                  rfeControl = ctrl)
 ParallelLogger::stopCluster(cl)
+rm(cl)
 
+terms <- unique(c('doy', lmProfile[['optVariables']]))
 
-lmProfile[['optVariables']]
+formula <- as.formula(
+  paste(
+    "Pct_Anthesis ~ ",  paste0("s(", terms, ", bs = 'tp')", collapse = " + ")
+    )
+)
 
-
-g_model <- gam(Pct_Anthesis ~ 
-                 s(doy, bs = 'tp') + 
-               #  s(gdgfgd10, bs = 'tp') + 
-                 s(bio10, bs = 'tp'), 
-            #     s(bio14, bs = 'tp') + 
-            #     s(gdd0, bs = 'tp') + 
-            #     s(cti, bs = 'tp') + 
-            #     s(bulk_density, bs = 'tp') + 
-             #    s(gdgfgd5, bs = 'tp'),
+g_model <- gam(formula,
             na.action = 'na.omit', family = 'binomial', 
-            data = achy, select=TRUE, method = 'ML', gamma = 7)
+            data = achy, select = TRUE, method = 'ML')
 
 par(mar=c(4,4,2,2))
 plot(g_model)
@@ -91,27 +88,7 @@ anova(g_model)
 g_model <- update(g_model, method='ML', na.action='na.fail')
 summary(g_model)
 
+
+rm(terms, formula)
 # https://stacyderuiter.github.io/s245-notes-bookdown/gams-generalized-additive-models.html
 # notes on GAMS!!
-
-oz <- read.csv('https://raw.githubusercontent.com/selva86/datasets/master/ozone.csv')
-oz.gam <- mgcv::gam(ozone_reading ~ s(Pressure_gradient, k=5, bs='tp') +
-                s(Wind_speed, k=5, bs='tp') +
-                s(Temperature_Sandburg, k=5, bs='tp'), data=oz,
-              method='GCV', select=TRUE)
-
-# METHODS GCV, AND AIC ARE BEST FOR ATTEMPTING TO PREDICT RESULTS. 
-
-par(mar=c(4,4,2,2))
-plot(oz.gam)
-summary(oz.gam)
-
-gam.check(oz.gam) # edfs approaching k' are problematic
-
-concurvity(oz.gam, full=TRUE) # values approaching 0 are problematic
-
-anova(oz.gam) # p value not as valuable as ML or REML. 
-
-oz.ml <- update(oz.gam, method='ML', na.action='na.fail') # ML is used to compare models with different fixed effects - WILL NOT WORK FOR RANDOM EFFECTS. 
-
-head(dredge(oz.ml, rank='AIC'),2)
