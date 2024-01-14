@@ -70,7 +70,7 @@ achy <- achy |>
 # population in in a phenophase. 
 ctrl <- caret::rfeControl(functions = gamFuncs,
                    method = "repeatedcv", number = 10,  repeats = 5,
-                   verbose = FALSE, rerank = TRUE, 
+                 s  verbose = FALSE, rerank = TRUE, 
                    allowParallel = TRUE, seeds = NA)
 
 inde <- as.matrix(sf::st_drop_geometry(achy[,8:23]))
