@@ -24,7 +24,25 @@ factoextra::fviz_pca_var(pca,
 predict(preds, pca, cores = parallel::detectCores(),
              filename = file.path('../results/spatial/gddPCA-AB.tif'))
 
-comp1 <- rast('../results/spatial/gddPCA-AB.tif')
-writeRaster(comp1, '../results/spatial/gddPCA.tif')
+comp1 <- rast('../results/spatial/gddPCA-AB.tif')[[1]]
 
-plot(comp1)
+v <- values(comp1)
+values(comp1) <- scales::rescale(v, to = c(0, 1))
+plot(comp1[[1]])
+
+writeRaster(comp1, '../results/spatial/gddPCA.tif', overwrite = TRUE)
+
+rm(v, p, preds, comp1)
+
+# first raster is a little big... 8.5m cells. 
+# now bring down the resolution so we can interpolate more quickly. 
+
+comp1 <- rast( '../results/spatial/gddPCA.tif')
+cp1_c <- dim(comp1)[1] * dim(comp1)[2] 
+
+comp2 <- aggregate(comp1, factor = 2, fun = 'mean')  
+dim(comp2)[1] * dim(comp2)[2] / cp1_c # one quarter the size. ;-)
+
+writeRaster(comp2, '../results/spatial/gddPCA.tif', overwrite = TRUE)
+
+rm(comp1, comp2, cp1_c)
