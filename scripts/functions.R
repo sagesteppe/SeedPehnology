@@ -120,10 +120,10 @@ initiation_cessation <- function(x, iter, bs, n_cores){
   
   initiation <- parallel::mclapply(
     X = grps, FUN = phenesse::weib_percentile_ci, mc.cores = n_cores,
-    iterations = iter, percentile = 0.01, bootstraps = bs)
+    iterations = iter, percentile = 0.01, bootstraps = bs, conf = 0.9)
   cessation <- parallel::mclapply(
     X = grps, FUN = phenesse::weib_percentile_ci, mc.cores = n_cores,
-    iterations = iter, percentile = 0.99, bootstraps = bs)
+    iterations = iter, percentile = 0.99, bootstraps = bs, conf = 0.9)
   
   results <- dplyr::bind_rows(
     data.frame(event = 'initiation', dplyr::bind_rows(initiation, .id = "ClusterID")), 
@@ -138,3 +138,25 @@ initiation_cessation <- function(x, iter, bs, n_cores){
   return(results)
 }
 
+
+
+#' grab day of years before and after phenophase
+#' @param x the output of initiation_cessation
+#' @param event either 'initiation' or 'cessation'
+doy_gen <- function(x, event){
+  
+  if(event == 'cessation'){ci <- 'high_ci'} else {ci <- 'low_ci'}
+  ci_event <- round(x[x$event == event, ci])
+  
+  if(event == 'cessation'){
+    doys <- seq.int(ci_event + 28, ci_event)
+  } else {
+    doys <- seq.int(ci_event + 28, ci_event)
+  }
+  
+  doys <- sample(doys, 
+                 size = x[x$event == event, 'observations'],  replace = TRUE)
+  
+  return(sort(doys))
+  
+}
