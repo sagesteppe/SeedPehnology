@@ -97,3 +97,44 @@ geoClust_wrap <- function(x, clust_vars){
   ob <- dplyr::bind_cols(x, ClusterID = clusters) 
   return(ob)
 }
+
+
+#' calculate the initiation and cessation of a phenophase using phenesse 
+#' this function is intended to calculate these variables for clusters of populations
+#' of a species. For example the output of geoClust_wrap
+#' @param x output of geoClust_wrap
+#' @param iter the number of iterations to perform see phenesse::weib_percentile_ci. defaults to 250 here, 500 is their suggestion.
+#' @param bs the number of bootstraps to perform to generate a confidence interval, note these BS take considerably longer than a typical bs sampling event, Sys.time(initiation_cessation, bs = 10) to get a feel. Defaults to the number of supplied cores. 
+#' @param n_cores the number of cores to use while processing the records, defaults to all cores.
+initiation_cessation <- function(x, iter, bs, n_cores){
+  
+  if(missing(iter)){iter <- 250; 
+  message('# of iterations not supplied to `iter` defaults to 250')}
+  if(missing(n_cores)){n_cores <- parallel::detectCores(); 
+  message('# of cores not supplied to `n_cores` defaults to all, e.g. parallel::detectCores()')}
+  if(missing(bs)){bs <- n_cores;
+  message('# of bootstrap reps not supplied to `bs` defaults to n_cores')}
+  
+  grps <- split(x, f = x$ClusterID)
+  grps <- lapply(grps, '[[', 'doy')
+  
+  initiation <- parallel::mclapply(
+    X = grps, FUN = phenesse::weib_percentile_ci, mc.cores = n_cores,
+    iterations = iter, percentile = 0.01, bootstraps = bs)
+  cessation <- parallel::mclapply(
+    X = grps, FUN = phenesse::weib_percentile_ci, mc.cores = n_cores,
+    iterations = iter, percentile = 0.99, bootstraps = bs)
+  
+  results <- dplyr::bind_rows(
+    data.frame(event = 'initiation', dplyr::bind_rows(initiation, .id = "ClusterID")), 
+    data.frame(event = 'cessation', dplyr::bind_rows(cessation, .id = "ClusterID"))
+  )
+  no_obs <- data.frame(
+    ClusterID = names(grps),
+    observations = sapply(X = grps, FUN = length) 
+  )
+  results <- merge(results, no_obs, by = 'ClusterID')
+  
+  return(results)
+}
+

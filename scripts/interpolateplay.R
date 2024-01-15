@@ -32,25 +32,10 @@ clusts <- geoClust_wrap(acle2clust, 'PC1')
 rm(nf, acle2clust)
 
 ggplot() + 
-  geom_sf(data = clusts, aes(color = ClusterID)) + 
-  geom_sf(data = mins, shape = 4)
+  geom_sf(data = clusts, aes(color = ClusterID)) 
 
-hist(clusts$doy)
-hist(mins$doy)
-
-grps <- split(clusts, f = clusts$ClusterID)
-grps <- lapply(grps, '[[', 'doy')
-
-start <- lapply(grps, phenesse::weib_percentile, percentile = 0.1, iterations = 250)
-end <- lapply(grps, phenesse::weib_percentile, percentile = 0.1, iterations = 250)
-out
-
-
-# perform doy onset calculations for each cluster of acle
-phenesse::weib_percentile(observations = acle$doy, 
-                          percentile = 0.01, iterations = 250)
-
-
+no_cores <- parallel::detectCores()
+out <- initiation_cessation(clusts, n_cores = no_cores)
 
 # try another species. 
 abvi <- ridigbio::idig_search(rq = list(scientificname = 'Abronia villosa')) |> 
@@ -72,7 +57,7 @@ abvi2clust <- abvi[ as.numeric( st_distance(abvi, nf, by_element = T) ) < 80000 
 # note some species may begin flowering in upper DOY, and peak afterwards....
 # see for example abronia villosa. 
 hist(abvi$doy)
-rm(abvi)
+rm(abvi)s
 
  
 
