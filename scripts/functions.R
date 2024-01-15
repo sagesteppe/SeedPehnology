@@ -145,13 +145,12 @@ initiation_cessation <- function(x, iter, bs, n_cores){
 #' @param event either 'initiation' or 'cessation'
 doy_gen <- function(x, event){
   
-  if(event == 'cessation'){ci <- 'high_ci'} else {ci <- 'low_ci'}
-  ci_event <- round(x[x$event == event, ci])
+  ci_event <- round(x[x$event == event, 'estimate'])
   
   if(event == 'cessation'){
     doys <- seq.int(ci_event + 28, ci_event)
   } else {
-    doys <- seq.int(ci_event + 28, ci_event)
+    doys <- seq.int(ci_event - 28, ci_event)
   }
   
   doys <- sample(doys, 
@@ -159,4 +158,11 @@ doy_gen <- function(x, event){
   
   return(sort(doys))
   
+}
+
+
+#' create an interpolated surface with a linear covariate
+#' ?interpolate in terra for examples
+pfun <- function(model, x, ...) {
+  predict(model, x[,1:2], Z=x[,3], ...)
 }
