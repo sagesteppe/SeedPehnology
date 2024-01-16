@@ -166,3 +166,71 @@ doy_gen <- function(x, event){
 pfun <- function(model, x, ...) {
   predict(model, x[,1:2], Z=x[,3], ...)
 }
+
+#' create pseudo-absences for phenophases 
+#' @param x the output of geoClust 
+#' @param estimates the output of initiation_cessation 
+pheno_abs <- function(x, estimates){
+  
+  grps <- split(x, f = x$ClusterID)
+  estimates <- split(estimates, f = estimates$ClusterID)
+  
+  ed <- unlist(lapply(estimates, doy_gen, 'initiation'))
+  ld <- unlist(lapply(estimates, doy_gen, 'cessation'))
+  
+  # PCA1 1 = hottest, 0 = coldest. 
+  # Give the earliest initiation DOY absence to the warmest place, 
+  # and the latest absences to the coldest places. 
+  x <- arrange(x, ClusterID, PC1)
+  out <- data.frame(initAbs = ed, cessAbs = ld)
+  out <- dplyr::bind_cols(x, data.frame(initAbs = ed, cessAbs = ld))
+  
+  # ensure that the cessation is > 1 weeks after observation and
+  # initiation greater > 1 weeks before observation.
+  out <- out |>
+    dplyr::rowwise() |>
+    dplyr::mutate(
+      initAbs = if_else((doy - 10) < initAbs, (doy - 10), initAbs), 
+      cessAbs = if_else((doy + 10) > cessAbs, (doy + 10), cessAbs)
+    )
+  
+  # identify records in clusters which have a nearest neighbor belonging to a 
+  # different cluster
+  
+  nearestClusterMismatch <- which( sf::st_drop_geometry(out[,'ClusterID']) 
+                                   != sf::st_drop_geometry(out[dmat, 'ClusterID']) )
+  
+  tdat <- out[-nearestClusterMismatch,]
+  # subset the raster surface to only cover the points which could benefit
+  # from interpolated values. 
+  
+  tdat_hull <- vect(
+    sf::st_convex_hull(
+      sf::st_transform(
+        sf::st_buffer(
+          sf::st_transform(
+            sf::st_union(
+              out[nearestClusterMismatch,]), 
+            5070), 
+          750),
+        crs(pca1))))
+  
+  surface <- terra::crop(pca1, tdat_hull, mask = TRUE)
+  early_mod <- fields::Tps(st_coordinates(tdat), tdat$initAbs, Z = tdat$PC1)
+  late_mod <- fields::Tps(st_coordinates(tdat), tdat$cessAbs, Z = tdat$PC1)
+  
+  early_surf <- terra::interpolate(surface, early_mod, fun=pfun)
+  late_surf <- terra::interpolate(surface, late_mod, fun=pfun)
+  names(early_surf) <- 'initAbs'
+  names(late_surf) <- 'cessAbs'
+  
+  mismatch <- out[nearestClusterMismatch, !names(out) %in% c("initAbs", "cessAbs")]
+  ef <- terra::extract(early_surf, mismatch, bind = TRUE)
+  lf <- terra::extract(late_surf, ef, bind = TRUE) |>
+    sf::st_as_sf() |>
+    dplyr::mutate(across(initAbs:cessAbs, round))
+  
+  out <- dplyr::bind_rows(out, lf)
+  return(out)
+  
+}
