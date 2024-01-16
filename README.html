@@ -385,55 +385,88 @@ species across it’s geographic and concomitant environmental range.</p>
 <p>Hererin we use GAM’s to model phenophases, inferred from herbarium
 specimens and using environmental predictors identified as casual cues
 of phenology, in space. Our necessity to more accurately understand the
-phenology of species arose from two use cases. The first involves the
-use of metabarcoding for pollination studies, by being able to restrict
-the number of possible matches to those species actively flowering at a
-point in itme, the accuracy of metabarcoding results may rise. The
-second is for native seed collection for both native plant germplasm
-development, and <em>ex-situ</em> conservation. The identification of
-putative populations with enough individuals to warrant germplasm
-development is a time consuming process, and a populations ability to
-support these collections varies wildly with the years weather, pathogen
-load. The collection of seeds, which is generally occurring for both
-many species and many populations each year, is challenged by both the
-need for crews to collect from other species and the natural dispersal
-of seeds at the either end - simply put <strong>timing is
-everything</strong>.</p>
-<div id="workflow-for-neural-net-training-not-this-year." class="section level2">
-<h2>Workflow for Neural Net Training ; not this year.</h2>
-<p>Mask R-CNN models have been successfully applied to determining and
-counting the phenological status of reproductive organs on herbarium
-sheets. Previous efforts have largely focused on Mid and Upper Atlantic
-flowering herbs, generally monocots, with showy flowers, and very large
-samples. These efforts have been published in the peer-reviewed
-literature, and we believe can be operationalized on a larger scale,
-albeit with less accurate results.</p>
-<p>Given the phylogenetic and accompanying morphological diversity of
-the target taxa, new mask R-CNN models will be generated for several
-clades. …</p>
-<p>The workflow for mask r-cnn training requires the use of many humans
-to label image data. Best practice involves sampling a diverse set of
-images which feature a diversity of reproductive states across the range
-of the species (for statistical modelling, see OTHER SECTION).</p>
-<p>Generation of a training image set for MASK R-CNN includes:</p>
-<ol style="list-style-type: decimal">
-<li>Use SEINET to access all occurrence records, and associated image
-data in text format.</li>
-<li>Using all occurrence records extract the latitude, longitude, and
-Day of Year (DOY) the specimen was collected.</li>
-<li>Rescale the above variables to the ranges of 0-1</li>
-<li>From an orthogonal latin hypercube design, gather 100 points.</li>
-<li>From each of the 100 points from the LHS, identify the scanned
-herbarium record, with the smallest distance.</li>
-<li>Identify the next two closest herbarium records, and randomly select
-50 records for over-sample records.</li>
-<li>use wget to download all relevant images for distribution and
-annotation</li>
-<li>Split the 100 specimens and their associated over-samples into 3 30
-specimen data sets, each for a separate analyst.</li>
-<li>A Senior botanist will annotate 10 records as a guide which the
-analysts can refer to as they work.</li>
-</ol>
+phenology of species arose from our goal of native seed collection for
+both native plant germplasm development, and <em>ex-situ</em>
+conservation. The identification of putative populations with enough
+individuals to warrant germplasm development is a time consuming
+process, because most plant species can only be identified when they
+have reproductive organs, and a populations ability to support these
+collections varies wildly with the years weather, pathogen load, and
+various stochastic processes. The collection of seeds, which is
+generally occurring for both many species and many populations each
+year, is challenged by both the need for crews to collect from other
+species and the natural dispersal of seeds - simply put <em>timing is
+everything</em>.</p>
+</div>
+<div id="methods" class="section level1">
+<h1>Methods</h1>
+<div id="data-sources" class="section level2">
+<h2>Data Sources</h2>
+<p>Species records were derived from the Symbiota herbarium portal for
+all years from 1981-2021, these years reflected the climate means used
+as independent variables. All records were downloaded, and the records
+in the 2.5% Day of Year quantile were manually reviewed. These early
+records were reviewed because, especially with graminoids, collectors
+may actually collect material without reproductive organs yet reaching
+anthesis. The later records were reviewed because collectors may have
+collections of individuals entirely post-anthesis - a situation very
+common with certain clades where species are distinguished by
+characteristics of their fruits (e.g. Leguminosae). In both scenarios
+analysts proceeded towards the mean of the distribution until they
+encountered 5 consecutive sheets with the desired phenophase.</p>
+<p>CHELSA climate variables for Growing Degree Days (GDD) heat sums (at
+0C, 5C, 10C), first (gdgfgd) and last (gddlgd) growing day of year,
+vapor pressure deficits (vpd), Bio10 (mean daily mean air temperatures
+of the warmest quarter), and Bio14 (precipitation amount of the driest
+month). Soil bulk density, which is shown to reflect the amount of
+air/water space in soil, was downloaded from SoilGrids… Compound
+Topographic index, which describes the potential of areas throughout a
+landscape to accumulate soil moisture via a combination of its landform
+position, slope, aspect, and upslope catchment area, was downloaded from
+geomorpho90m and resampled from 90m to the 250m resolution of the
+previous data sets.</p>
+<p>GAM’s require data on when a species was not flowering in order to
+develop splines for the onset of flowering. Pseudo-floral absences were
+created using known sites, and their observed phenology. All of the
+CHELSA climate variables were decomposed using PCA, and the first axis
+(explaining 97.6% of the variation; 750m x 750M CELL RESOLUTION?) was
+used as a feature space in a Ward-like hierarchical clustering algorithm
+which seeks to maximize homogeneity of both the feature and constraint
+(here geography) space.<br />
+A suitable number of clusters from the independent variable were
+automatically selected using kgs (maptree), these clusters were then
+reanalyzed in light of the constraint space using automatic selection of
+an alpha parameter which blends the feature and constraint space and
+re-clustered using hclustgeo (Clustgeo).<br />
+Each cluster had weibull estimates of flowering initiation and cessation
+modelled, and any doy within 28 days preceding onset or following
+cessation were drawn for each group (phenesse). These values were
+arranged by ascending day of year and joined to the members of the group
+via decreasing warm to cool values along the PCA axis. Points in
+clusters which had a nearest geographic neighbor in another cluster had
+their randomly generated pseudo-absences wiped, and thin plate spline
+regression using the PCA axis as an independent variable, and
+interpolation was used to repopulate the floral pseudo-absence dates
+(fields, terra).</p>
+</div>
+<div id="modelling" class="section level2">
+<h2>Modelling</h2>
+<p>All independent variables were extracted to the dependent variables,
+and if a value for an independent variable was missing - which was not
+uncommon for Soil Bulk Density, where the modellers excluded the fringes
+of several vernally wet playas - it was imputed as the mean of the value
+for the species. All independent variables then underwent feature
+selection using the Recursive Feature Elimination (rfe) with 10
+Cross-Validations (CV) folds, 5 replicates, and from 1-10 variables
+using caret (<span class="citation">@kuhn</span>). The remaining
+variable(s) were used as covariates with day of year always included in
+the models. A gamm was fit using presence/absence of flowering as a
+response, as well as gamm’s with error structure of gaussian, spherical,
+and exponential variograms, with REML (<span class="citation">@package</span>). All models were subjected to model
+selection, and the top model determined via AUC scores (MuMIn)..</p>
+</div>
+<div id="surfaces" class="section level2">
+<h2>Surfaces</h2>
 </div>
 </div>
 
