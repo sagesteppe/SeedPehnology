@@ -20,19 +20,20 @@ The collection of seeds, which is generally occurring for both many species and 
 
 ## Data Sources
 
-Species records were derived from the Symbiota herbarium portal for all years from 1981-2021, these years reflected the climate means used as independent variables. 
+Species records were derived from the Symbiota herbarium portal for all years from 1981-2021, these years reflected the climate means used as independent variables (ridigbio). 
 All records were downloaded, and the records in the 2.5% Day of Year (DOY) quantile were manually reviewed. 
-These early records were reviewed because, especially with graminoids, collectors may actually collect material without reproductive organs yet reaching anthesis.
-The later records were reviewed because collectors may have collections of individuals entirely post-anthesis - a situation very common with certain clades where species are distinguished by characteristics of their fruits (e.g. Leguminosae). 
-In both scenarios analysts proceeded towards the mean of the distribution until they encountered 5 consecutive sheets with the desired phenophase. 
+These early records were reviewed because novice collectors, especially with graminoids, may actually collect material without reproductive organs yet reaching anthesis ('in bud').
+The later records were reviewed because collectors may have collections of individuals entirely post-anthesis - a situation very common with certain clades where species are distinguished by characteristics of their fruits (e.g. the Leguminosae). 
+In both scenarios analysts proceeded towards the mean of the distribution until they encountered 5 consecutive sheets with the desired phenophase.  
 
-CHELSA climate variables for Growing Degree Days (GDD) heat sums (at 0C, 5C, 10C), first (gdgfgd) and last (gddlgd) growing day of year, vapor pressure deficits (vpd), Bio10 (mean daily mean air temperatures of the warmest quarter), and Bio14 (precipitation amount of the driest month). 
-Soil bulk density, which is shown to reflect the amount of air/water space in soil, was downloaded from SoilGrids... 
-Compound Topographic index, which describes the potential of areas throughout a landscape to accumulate soil moisture via a combination of its landform position, slope, aspect, and upslope catchment area, was downloaded from geomorpho90m and resampled from 90m to the 250m resolution of the previous data sets. 
+Independent variables reflected climate, and landform and soil parameters which modulate soil moisture.
+The climate variables from CHELSA, were 1981-2010 annual means, for Growing Degree Days (GDD) heat sums (at 0°C, 5°C, 10°C), first (gdgfgd) and last (gddlgd) GDD DOY, vapor pressure deficit (vpd), Bio10 (mean daily mean air temperatures of the warmest quarter), and Bio14 (precipitation amount of the driest month).
+Soil bulk density, which is shown to reflect the amount of air/water space in soil, was downloaded from SoilGrids. 
+Compound Topographic Index (cti), which describes the potential of an area to accumulate soil moisture via a combination of its landform position, slope, aspect, and size of it's upslope catchment area, was downloaded from geomorpho90m and resampled from 90m to the 250m resolution of the previous data sets. 
 
 GAM's require data on when a species was **not** flowering in order to develop splines for the onset of flowering. 
 Pseudo-floral absences were created using known sites, and their observed phenology. 
-All of the CHELSA climate variables were decomposed using PCA, and the first axis (explaining 97.6% of the variation; 750m x 750M CELL RESOLUTION?) was used as a feature space in a Ward-like hierarchical clustering algorithm which seeks to maximize homogeneity of both the feature and constraint (here geography) space (hclustgeo).  
+All of the CHELSA climate variables were decomposed using PCA, and the first axis (explaining 97.6% of the variation; 750m x 750M cell resolution?) was used as a feature space in a Ward-like hierarchical clustering algorithm which seeks to maximize homogeneity of both the feature and constraint space - here geography (hclustgeo). 
 A suitable number of clusters from the independent variable were automatically selected using kgs (maptree), these clusters were then reanalyzed in light of the constraint space using automatic selection of an alpha parameter which blends the feature and constraint space and re-clustered using hclustgeo (Clustgeo).  
 Each cluster had weibull estimates of flowering initiation and cessation modelled, and any doy within 28 days preceding onset or following cessation were drawn for each group (phenesse). 
 These values were arranged by ascending day of year and joined to the members of the group via decreasing warm to cool values along the PCA axis. 
