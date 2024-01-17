@@ -33,7 +33,7 @@ Compound Topographic Index (cti), which describes the potential of an area to ac
 
 GAM's require data on when a species was **not** flowering in order to develop splines for the onset of flowering. 
 Pseudo-floral absences were created using known sites, and their observed phenology. 
-All of the CHELSA climate variables were decomposed using PCA, and the first axis (explaining 97.6% of the variation; 750m x 750M cell resolution?) was used as a feature space in a Ward-like hierarchical clustering algorithm which seeks to maximize homogeneity of both the feature and constraint space - here geography (hclustgeo). 
+All of the CHELSA climate variables were decomposed using PCA, and the first axis (explaining 98.1% of the variation; 750m x 750m cells) was used as a feature space in a Ward-like hierarchical clustering algorithm which seeks to maximize homogeneity of both the feature and constraint space - here geography (hclustgeo). 
 A suitable number of clusters from the independent variable were automatically selected using kgs (maptree), these clusters were then reanalyzed in light of the constraint space using automatic selection of an alpha parameter which blends the feature and constraint space and re-clustered using hclustgeo (Clustgeo).  
 
 Each cluster had weibull estimates of flowering initiation and cessation modelled, and any DOY within 28 days preceding onset or following cessation were drawn for each group (phenesse). 

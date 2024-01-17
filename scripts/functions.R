@@ -234,3 +234,23 @@ pheno_abs <- function(x, estimates){
   return(out)
   
 }
+
+
+
+# assess the output from a function. 
+myTryCatch <- function(expr) {
+  warn <- err <- NULL
+  value <- withCallingHandlers(
+    tryCatch(expr, error=function(e) {
+      err <<- e
+      NULL
+    }), warning=function(w) {
+      warn <<- w
+      invokeRestart("muffleWarning")
+    })
+  list(value=value, warning=warn, error=err)
+}
+
+conv_ob <- function(x){
+  if(is.null(x$warning) & is.null(x$warning) == TRUE){return(x[['value']])}
+}

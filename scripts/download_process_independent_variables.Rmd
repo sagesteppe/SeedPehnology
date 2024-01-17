@@ -42,12 +42,13 @@ rm(p, chelsa)
 
 I missed the download of the last GDD! We ran that with a slight modification to the bash code above, changing the URL file, and process these variables now. 
 
-```{r}
+```{r chelsa2, eval = F}
 
 p <- '../data/spatial/raw'
 chelsa <- rast(file.path(p, list.files(p)))
 domain <- project(domain, crs(chelsa))
 chelsa <- crop(chelsa, domain)
+chelsa <- subst(chelsa, NA, 0)
 names(chelsa) <- names(chelsa) <- gsub('CHELSA_|_1981.*$', '', names(chelsa))
 
 chelsa_og <- terra::rast( "../data/spatial/processed/CHELSA.tif")
@@ -112,4 +113,16 @@ names(che) <- gsub('CHELSA_|_1981.*$', '', names(che))
 writeRaster(che, '../data/spatial/processed/CHELSA.tif', overwrite = TRUE)
 ```
 
+
+
+Mask the data to terrestrial surfaces
+```{r}
+che <- rast('../data/spatial/processed/CHELSA.tif')
+ocean <- rnaturalearth::ne_download(category = 'physical', type = 'ocean', scale = 10)
+che <- mask(che, ocean, inverse= T)
+
+writeRaster(che, '../data/spatial/processed/CHELSA.tif', overwrite = TRUE)
+
+rm(ocean)
+```
 

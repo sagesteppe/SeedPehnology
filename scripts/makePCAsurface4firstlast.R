@@ -2,13 +2,13 @@ library(terra)
 
 setwd('~/Documents/SeedPhenology/scripts')
 
-
 p <- '../data/spatial/processed'
 preds <- rast(file.path(p, list.files(p)))
 
 set.seed(27)
-vars <- spatSample(preds, 10000)
-vars <- vars[,2:14]
+vars <- spatSample(preds, 15000)
+vars <- vars[,2:17]
+vars <- vars[ complete.cases(vars), ]
 pca <- prcomp(vars)
 
 plot(pca)
