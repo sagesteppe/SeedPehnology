@@ -40,6 +40,21 @@ terra::writeRaster(chelsa, "../data/spatial/processed/CHELSA.tif")
 rm(p, chelsa)
 ```
 
+I missed the download of the last GDD! We ran that with a slight modification to the bash code above, changing the URL file, and process these variables now. 
+
+```{r}
+
+p <- '../data/spatial/raw'
+chelsa <- rast(file.path(p, list.files(p)))
+domain <- project(domain, crs(chelsa))
+chelsa <- crop(chelsa, domain)
+names(chelsa) <- names(chelsa) <- gsub('CHELSA_|_1981.*$', '', names(chelsa))
+
+chelsa_og <- terra::rast( "../data/spatial/processed/CHELSA.tif")
+chelsa <- c(chelsa_og, chelsa)
+terra::writeRaster(chelsa, "../data/spatial/processed/CHELSA1.tif", overwrite = TRUE)
+```
+
 We will also download soilgrids 250m data for bulk density. Bulk density is defined by soil texture, organic carbon, and the packing of particles. Soils with higher bulk density have been identified as holding less soil moisture content. 
 
 ```{r download soilgrids data, eval = F}
