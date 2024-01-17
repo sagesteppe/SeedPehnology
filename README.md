@@ -35,15 +35,16 @@ GAM's require data on when a species was **not** flowering in order to develop s
 Pseudo-floral absences were created using known sites, and their observed phenology. 
 All of the CHELSA climate variables were decomposed using PCA, and the first axis (explaining 97.6% of the variation; 750m x 750M cell resolution?) was used as a feature space in a Ward-like hierarchical clustering algorithm which seeks to maximize homogeneity of both the feature and constraint space - here geography (hclustgeo). 
 A suitable number of clusters from the independent variable were automatically selected using kgs (maptree), these clusters were then reanalyzed in light of the constraint space using automatic selection of an alpha parameter which blends the feature and constraint space and re-clustered using hclustgeo (Clustgeo).  
-Each cluster had weibull estimates of flowering initiation and cessation modelled, and any doy within 28 days preceding onset or following cessation were drawn for each group (phenesse). 
-These values were arranged by ascending day of year and joined to the members of the group via decreasing warm to cool values along the PCA axis. 
+
+Each cluster had weibull estimates of flowering initiation and cessation modelled, and any DOY within 28 days preceding onset or following cessation were drawn for each group (phenesse). 
+These values were arranged by ascending DOY and joined to the members of the group via decreasing warm to cool values along the PCA axis. 
 Points in clusters which had a nearest geographic neighbor in another cluster had their randomly generated pseudo-absences wiped, and thin plate spline regression using the PCA axis as an independent variable, and interpolation was used to repopulate the floral pseudo-absence dates (fields, terra). 
 
 ## Modelling
 
 All independent variables were extracted to the dependent variables, and if a value for an independent variable was missing - which was not uncommon for Soil Bulk Density, where the modellers excluded the fringes of several vernally wet playas - it was imputed as the mean of the variable for the species. 
 All independent variables then underwent feature selection using the Recursive Feature Elimination (rfe) with 10 Cross-Validations (CV) folds, 5 replicates, and from 1-10 variables using caret (@kuhn).
-The remaining variable(s) were used as covariates with day of year always included in the models. 
+The remaining variable(s) were used as covariates with DOY always included in the models. 
 A gamm was fit using presence/absence of flowering as a response, as well as gamm's with error structure of gaussian, spherical, and exponential variograms, with REML (@package). 
 All models were subjected to model selection, and the top model determined via AUC scores (MuMIn).. 
 

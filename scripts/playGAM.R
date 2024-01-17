@@ -2,14 +2,13 @@ library(sf)
 library(tidyverse)
 library(mgcv)
 library(terra)
-library(spThin)
 
 # thin(loc.data = ,  lat.col = , long.col = , reps = 100, thin.par = 3, )
 setwd('~/Documents/SeedPhenology/scripts')
 achy <- read.csv('../data/processed/high_priority_sheets.csv') %>% 
   filter(scientificname == 'achnatherum hymenoides')
 
-# subset to scored sheets, and add '0' when a phenophasewas not observed. 
+# subset to scored sheets, and add '0' when a phenophase was not observed. 
 achy <- achy %>% 
   dplyr::select(-accessuri) |>
   filter(! if_all(Pct_Bud:Pct_Dropped, ~ is.na(.))) |>
@@ -29,11 +28,6 @@ achy <- left_join(achy, tab_data) |>
 rm(tab_data)
 # we now have Day of year, and latitude. DOY will be a fixed predictor, and I anticipate
 # will hold the most explanatory power, where other terms will be covariates for it
-
-
-
-# the gams require absences of flowering both before and after the observed records. 
-# we will generate an equal amount of non-flowering records to the flowering data set. 
 
 
 
@@ -57,83 +51,122 @@ achy <- achy |>
 ## now we will include the longitude and latitude as a correlation term to avoid
 # inflating the residuals
 
-achy <- achy |>
-  st_transform(5070) %>% 
-  mutate(
-    Latitude = sf::st_coordinates(.)[,2], 
-    Longitude = sf::st_coordinates(.)[,1],
-     .before = 'geometry') |>
-  st_transform(4326)
 
+modeller <- function(x){
   
-# we will determine which features have utiltity in predicting whether a 
-# population in in a phenophase. 
-ctrl <- caret::rfeControl(functions = gamFuncs,
-                   method = "repeatedcv", number = 10,  repeats = 5,
-                 s  verbose = FALSE, rerank = TRUE, 
-                   allowParallel = TRUE, seeds = NA)
-
-inde <- as.matrix(sf::st_drop_geometry(achy[,8:23]))
-de <- sf::st_drop_geometry(achy$Pct_Anthesis)
-
-cl <- parallel::makeCluster(parallel::detectCores(), type='PSOCK')
-doParallel::registerDoParallel(cl)
-lmProfile <- caret::rfe(
-  inde, # independent variables
-  de, # dependent variables
-  sizes  = c(1:10),
-  rank = TRUE, 
-  rfeControl = ctrl)
-ParallelLogger::stopCluster(cl)
-rm(cl)
-
-terms <- unique(c('doy', lmProfile[['optVariables']]))
-formula <- as.formula(
-  paste(
-    "Pct_Anthesis ~ ",  paste0("s(", terms, ", bs = 'tp')", collapse = " + ")
+  x <- x |>
+    st_transform(5070) %>% 
+    mutate(
+      Latitude = sf::st_coordinates(.)[,2], 
+      Longitude = sf::st_coordinates(.)[,1],
+      .before = 'geometry') |>
+    st_transform(4326)
+  
+  taxon <- sf::st_drop_geometry(x$scientificname)[1]
+  
+  
+  # we will determine which features have utiltity in predicting whether a 
+  # population in in a phenophase. 
+  ctrl <- caret::rfeControl(functions = caret::gamFuncs,
+                            method = "repeatedcv", number = 10,  repeats = 5,
+                            verbose = FALSE, rerank = TRUE, 
+                            allowParallel = TRUE, seeds = NA)
+  
+  inde <- as.matrix(sf::st_drop_geometry(x[,8:23]))
+  de <- sf::st_drop_geometry(x$Pct_Anthesis)
+  
+  cl <- parallel::makeCluster(parallel::detectCores(), type='PSOCK')
+  doParallel::registerDoParallel(cl)
+  lmProfile <- caret::rfe(
+    inde, # independent variables
+    de, # dependent variables
+    sizes  = seq.int(from = 2, to = 10, by = 2),
+    rank = TRUE, 
+    rfeControl = ctrl)
+  ParallelLogger::stopCluster(cl)
+  rm(cl)
+  
+  terms <- unique(c('doy', lmProfile[['optVariables']]))
+  formula <- as.formula(
+    paste(
+      "Pct_Anthesis ~ ",  paste0("s(", terms, ", bs = 'tp')", collapse = " + ")
     )
-)
+  )
+  cor_form <- as.formula("~ Latitude + Longitude")
+  
+  urGamm <- MuMIn::uGamm
+  formals(urGamm)$na.action <- 'na.omit' 
+  formals(urGamm)$family <- 'binomial'
+  formals(urGamm)$method <- 'REML'
+  
+  mod.aspatial <- urGamm(formula, data = x)
+  mod.corExp <- urGamm(
+    formula, data = x, correlation = nlme::corExp(form = cor_form, nugget=T))
+  mod.corGaus <- urGamm(
+    formula, data = x, correlation = nlme::corGaus(form = cor_form, nugget=T))
+  mod.corSpher <- urGamm(
+    formula, data = x, correlation = nlme::corSpher(form = cor_form, nugget=T))
+  mod.corRatio <- urGamm(
+    formula, data = x, correlation = nlme::corRatio(form = cor_form, nugget=T))
+  mod.corLin <- urGamm(
+    formula, data = x, correlation = nlme::corLin(form = cor_form, nugget=T))
+  
+  msel_tab <- MuMIn::model.sel(
+    mod.aspatial, mod.corExp, mod.corGaus, mod.corSpher, mod.corRatio, mod.corLin)
+  
+  top_mod <- row.names(msel_tab[1,])
+  msel_tab
+  
+  if(top_mod == 'mod.aspatial'){
+    mod.final <- mgcv::gamm(formula, data = x, method = 'ML', family = 'binomial')
+  } else if(top_mod == 'mod.corExp'){
+    mod.final <- mgcv::gamm(formula, data = x, method = 'ML', family = 'binomial',
+                            correlation = nlme::corExp(form = cor_form, nugget=T))
+  } else if(top_mod == 'mod.corGaus'){
+    mod.final <- mgcv::gamm(formula, data = x, method = 'ML', family = 'binomial',
+                            correlation = nlme::corGaus(form = cor_form, nugget=T))
+  } else if(top_mod == 'mod.corSpher'){
+    mod.final <- mgcv::gamm(formula, data = x, method = 'ML', family = 'binomial',
+                            correlation = nlme::corSpher(form = cor_form, nugget=T))
+  } else if(top_mod == 'mod.corRatio'){
+    mod.final <- mgcv::gamm(formula, data = x, method = 'ML', family = 'binomial',
+                            correlation = nlme::corRatio(form = cor_form, nugget=T))
+  } else if(top_mod == 'mod.corLin'){
+    mod.final <- mgcv::gamm(formula, data = x, method = 'ML', family = 'binomial',
+                            correlation = nlme::corLin(form = cor_form, nugget=T))
+  }
+  
+  # write out results to local #
+  msel_tab <- data.frame(msel_tab) |>
+    tibble::rownames_to_column('model')
+  
+  mod.final <- mod.final[['gam']]
+  
+  saveRDS(mod.final, 
+          file.path('../results/models', paste0(gsub(' ', '_', taxon), '.rds')))
+  
+  colnames(msel_tab) <- gsub('^s[.]', '', colnames(msel_tab))
+  colnames(msel_tab) <- gsub('\\..*$', '', colnames(msel_tab))
+  msel_tab <- data.frame( lapply(msel_tab, function(y) if(is.numeric(y)) round(y, 5) else y) ) 
+  write.csv(msel_tab, row.names = FALSE,
+    file.path('../results/selection_tables', paste0(gsub(' ', '_', taxon), '.csv')))
+  
+  return(mod.final)
+  
+}
 
-g_model <- mgcv::gam(formula,
-            na.action = 'na.omit', family = 'binomial', 
-            correlation = corExp(form = ~ Latitude + Longitude),
-            data = achy, select = TRUE, method = 'ML')
-
-# now we add a spatial autocorrelation term 
-
-# now refit the top model using method = 'ML' 
-
-par(mar=c(4,4,2,2))
-plot(g_model)
-summary(g_model)
-gam.check(g_model)
-concurvity(g_model, full=TRUE) 
-anova(g_model) 
-
-g_model <- update(g_model, method='ML', na.action='na.fail')
-summary(g_model)
-
-rm(terms, formula)
-
-
-
-
-
-
-
+set.seed(28)
+modeller(achy)
 
 # play with prediction
 
 pred_df <- expand.grid(doy = seq(min(achy$doy), max(achy$doy)), 
-                       gdd10 = seq(min(achy$gdd10), max(achy$gdd10), by = 1))
+                       bulk_density = seq(min(achy$bulk_density), max(achy$bulk_density), by = 1))
 
 pred_df <- expand.grid(doy = seq(50, 200), 
-                       gdd10 = mean(achy$gdd10)) # toy around to see results
+                       bulk_density = mean(achy$bulk_density)) # toy around to see results
 
-pred <- predict(g_model, pred_df, type = 'response', se = TRUE)
-
-
-plot(pred_df$doy, pred$fit)
+pred <- predict(mod.aspatial, pred_df, type = 'response', se = TRUE)
 
 # https://stacyderuiter.github.io/s245-notes-bookdown/gams-generalized-additive-models.html
 # notes on GAMS!!
