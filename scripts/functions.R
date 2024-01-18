@@ -10,9 +10,18 @@
 #' @param ... further arguments passed onto spsurvey::grts 
 specimen_sampler <- function(x, date, basepts, mindist, overpts, ...){
   
-  text_result <- ridigbio::idig_search(rq = list(scientificname = x)) |> 
-    dplyr::select(uuid, scientificname, datecollected, collector, geopoint.lon, geopoint.lat) |> 
+  fields2getrecord <- c(
+    "data.dwc:scientificName",  "data.dwc:decimalLatitude", 
+    "data.dwc:decimalLongitude", "collector", "uuid",
+    "data.dwc:year", "data.dwc:month", "data.dwc:day")
+  names(fields2getrecord) <- c(
+    'scientificname', 'geopoint.lat', 'geopoint.lon', 'collector', 'uuid', 'year', 'month', 'day')
+  
+  text_result <- ridigbio::idig_search(rq = list(scientificname = x),
+                                       fields = fields2getrecord) |> 
+    dplyr::rename(all_of(fields2getrecord)) |>
     tidyr::drop_na(geopoint.lon, geopoint.lat, datecollected) |> 
+    tidyr::unite(year, month, day, sep = '-') |>
     dplyr::mutate(datecollected = as.Date(datecollected)) |> 
     dplyr::filter(datecollected > date) |> # sensing data comes on line here
     dplyr::arrange(datecollected)
@@ -137,7 +146,6 @@ initiation_cessation <- function(x, iter, bs, n_cores){
   
   return(results)
 }
-
 
 
 #' grab day of years before and after phenophase

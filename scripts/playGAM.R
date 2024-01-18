@@ -62,7 +62,6 @@ modeller <- function(x){
   
   taxon <- sf::st_drop_geometry(x$scientificname)[1]
   
-  
   # we will determine which features have utiltity in predicting whether a 
   # population in in a phenophase. 
   ctrl <- caret::rfeControl(functions = caret::gamFuncs,
@@ -109,6 +108,9 @@ modeller <- function(x){
   mod.corLin <- urGamm(
     formula, data = x, correlation = nlme::corLin(form = cor_form, nugget=T))
   
+  tf <- unlist(lapply(X = mget(ls(pattern = 'mod[.]')), FUN = is.null))
+  rm(list = c(names(tf)[which(tf == TRUE)]))
+
   msel_tab <- MuMIn::model.sel(mget(ls(pattern = 'mod[.]')))
   top_mod <- row.names(msel_tab[1,])
   
@@ -142,7 +144,7 @@ modeller <- function(x){
   
   colnames(msel_tab) <- gsub('^s[.]', '', colnames(msel_tab))
   colnames(msel_tab) <- gsub('\\..*$', '', colnames(msel_tab))
-  msel_tab <- data.frame( lapply(msel_tab, function(y) if(is.numeric(y)) round(y, 5) else y) ) 
+  msel_tab <- data.frame(lapply(msel_tab, function(y) if(is.numeric(y)) round(y, 5) else y) ) 
   write.csv(msel_tab, row.names = FALSE,
     file.path('../results/selection_tables', paste0(gsub(' ', '_', taxon), '.csv')))
   
@@ -152,110 +154,6 @@ modeller <- function(x){
 
 set.seed(28)
 modeller(achy)
-
-
-
-
-achy <- achy |>
-  st_transform(5070) %>% 
-  mutate(
-    Latitude = sf::st_coordinates(.)[,2], 
-    Longitude = sf::st_coordinates(.)[,1],
-    .before = 'geometry') |>
-  st_transform(4326)
-
-# we will determine which features have utiltity in predicting whether a 
-# population in in a phenophase. 
-ctrl <- caret::rfeControl(functions = caret::gamFuncs,
-                          method = "repeatedcv", number = 10,  repeats = 5,
-                          verbose = FALSE, rerank = TRUE, 
-                          allowParallel = TRUE, seeds = NA)
-
-inde <- as.matrix(sf::st_drop_geometry(achy[,8:28]))
-de <- sf::st_drop_geometry(achy$Pct_Anthesis)
-
-cl <- parallel::makeCluster(parallel::detectCores(), type='PSOCK')
-doParallel::registerDoParallel(cl)
-lmProfile <- caret::rfe(
-  inde, # independent variables
-  de, # dependent variables
-  sizes  = seq.int(from = 2, to = 10, by = 2),
-  rank = TRUE, 
-  rfeControl = ctrl)
-ParallelLogger::stopCluster(cl)
-rm(cl)
-
-terms <- unique(c('doy', lmProfile[['optVariables']]))
-formula <- as.formula(
-  paste(
-    "Pct_Anthesis ~ ",  paste0("s(", terms, ", bs = 'tp')", collapse = " + ")
-  )
-)
-cor_form <- as.formula("~ Latitude + Longitude")
-
-urGamm <- MuMIn::uGamm
-formals(urGamm)$na.action <- 'na.omit' 
-formals(urGamm)$family <- 'binomial'
-formals(urGamm)$method <- 'REML'
-
-mod.aspatial <- conv_ob(myTryCatch(urGamm(formula, data = achy)))
-
-mod.corExp <- conv_ob(myTryCatch(urGamm(
-  formula, data = achy, correlation = nlme::corExp(form = cor_form, nugget=T))))
-mod.corGaus <- conv_ob(myTryCatch(urGamm(
-  formula, data = achy, correlation = nlme::corGaus(form = cor_form, nugget=T))))
-mod.corSpher <- conv_ob(myTryCatch(urGamm(
-  formula, data = achy, correlation = nlme::corSpher(form = cor_form, nugget=T))))
-mod.corRatio <- conv_ob(myTryCatch(urGamm(
-  formula, data = achy, correlation = nlme::corRatio(form = cor_form, nugget=T))))
-mod.corLin <- conv_ob(myTryCatch(urGamm(
-  formula, data = achy, correlation = nlme::corLin(form = cor_form, nugget=T))))
-
-lapply(X = mget(ls(pattern = 'mod[.]')), FUN = is.null)
-
-
-# do not write models with errors, nor warnings
-
-ob <- conv_ob(myTryCatch(urGamm(
-  formula, data = achy, correlation = nlme::corSpher(form = cor_form, nugget=T))))
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # play with prediction
