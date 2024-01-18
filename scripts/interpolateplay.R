@@ -6,16 +6,88 @@ library(rgeoda)
 setwd('~/Documents/SeedPhenology/scripts')
 source('functions.R')
 
-acle <- ridigbio::idig_search(rq = list(scientificname = 'Achnatherum lemmonii')) |> 
-  dplyr::select(uuid, scientificname, datecollected, collector, geopoint.lon, geopoint.lat) |> 
-  tidyr::drop_na(geopoint.lon, geopoint.lat, datecollected) |> 
-  dplyr::mutate(datecollected = as.Date(datecollected), 
-                doy = as.numeric(lubridate::yday(datecollected))) |> 
-  dplyr::filter(datecollected > '1979-01-01') |> # sensing data comes on line here
-  dplyr::arrange(datecollected) |>
-  sf::st_as_sf(coords = c(x = 'geopoint.lon', y = 'geopoint.lat'), crs = 4326)
+fields2getrecord <- c(
+  "data.dwc:scientificName",  "data.dwc:decimalLatitude", 
+  "data.dwc:decimalLongitude", "collector", "uuid",
+  "data.dwc:year", "data.dwc:month", "data.dwc:day")
+names(fields2getrecord) <- c(
+  'scientificname', 'geopoint.lat', 'geopoint.lon', 'collector', 'uuid', 'year', 'month', 'day')
 
-hist(acle$doy)
+text_result <- ridigbio::idig_search(rq = list(scientificname = 'Calycoseris parryi'),
+                                     fields = fields2getrecord) |> 
+  dplyr::rename(all_of(fields2getrecord)) |>
+  tidyr::drop_na(geopoint.lon, geopoint.lat, year, month, day) |> 
+  tidyr::unite('datecollected', year, month, day, sep = '-') |>
+  dplyr::mutate(datecollected = as.Date(datecollected), 
+                doy = lubridate::yday(datecollected)) |> 
+  dplyr::filter(datecollected > '1981-01-01') |> # sensing data comes on line here
+  dplyr::arrange(datecollected)
+
+
+cypu <- st_as_sf(text_result, coords = c('geopoint.lon', 'geopoint.lat'), crs = 4326)
+
+ggplot() + 
+  geom_sf(data = cypu)
+
+p <- rast('../results/spatial/gddPCA.tif')
+
+cypu <- terra::extract(preds, cypu, bind = TRUE) |>
+  st_as_sf()
+
+ggplot() + 
+  geom_point(data = cypu, aes(x = PC1, y = doy))
+
+
+# if the PC1 range is large use cuts... if the PC1 range is small - don't cut
+cypu$cuts =  cut(cypu$PC1, breaks = 3, labels = F) 
+qu <- quantile(cypu$doy,  probs = c(0.025, 0.975))
+
+ob_r <- max(cypu$PC1, na.rm = T) - min(cypu$PC1, na.rm = T) 
+
+#' this function flags records which warrant visual review as they are at extreme 
+#' ends of the distributions
+visual_review_flagger <- function(x){
+  
+  ob_r <- max(x$PC1, na.rm = T) - min(x$PC1, na.rm = T) 
+  
+  if(ob_r < 0.3){
+    
+    qu <- quantile(x$doy,  probs = c(0.025, 0.975))
+    x$flag <- ifelse(x$doy < qu[1] | x$doy > qu[2], 'Broad Flag', NA)
+    
+  } else if(ob_r < 0.6){
+    
+    x$cuts <- cut(x$PC1, breaks = 2, labels = F) 
+    cutty <- split(x, f = x$cuts)
+
+  } else {
+    
+    x$cuts <- cut(x$PC1, breaks = 3, labels = F) 
+    
+  }
+}
+
+visual_review_flagger(cypu)
+
+
+ob_r <- max(cypu$PC1, na.rm = T) - min(cypu$PC1, na.rm = T)
+cypu$cuts <- cut(cypu$PC1, breaks = 3, labels = F) 
+cutty <- split(cypu, f = cypu$cuts)
+
+lapply(cutty[])
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # extract the PCA axis to the values for clustering
 pca1 <- rast('../results/spatial/gddPCA.tif')

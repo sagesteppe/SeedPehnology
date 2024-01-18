@@ -1,4 +1,3 @@
-
 #' collect all scanned images of a species from idigbio after a certain date
 #' @param x Species name
 #' @param date date of collection (e.g. '1979-01-01', the year many climate data sets start)
@@ -20,9 +19,10 @@ specimen_sampler <- function(x, date, basepts, mindist, overpts, ...){
   text_result <- ridigbio::idig_search(rq = list(scientificname = x),
                                        fields = fields2getrecord) |> 
     dplyr::rename(all_of(fields2getrecord)) |>
-    tidyr::drop_na(geopoint.lon, geopoint.lat, datecollected) |> 
-    tidyr::unite(year, month, day, sep = '-') |>
-    dplyr::mutate(datecollected = as.Date(datecollected)) |> 
+    tidyr::drop_na(geopoint.lon, geopoint.lat, year, month, day) |> 
+    tidyr::unite('datecollected', year, month, day, sep = '-') |>
+    dplyr::mutate(datecollected = as.Date(datecollected), 
+                  doy = lubridate::yday(datecollected)) |> 
     dplyr::filter(datecollected > date) |> # sensing data comes on line here
     dplyr::arrange(datecollected)
   
@@ -282,3 +282,88 @@ f_modeller <- function(model, type = c("mod.aspatial", "mod.corExp", "mod.corGau
                             correlation = nlme::corLin(form = cor_form, nugget=T))
   )
 }
+
+#' fit some gams. 
+modeller <- function(x){
+  
+  x <- x |>
+    st_transform(5070) %>% 
+    mutate(
+      Latitude = sf::st_coordinates(.)[,2], 
+      Longitude = sf::st_coordinates(.)[,1],
+      .before = 'geometry') |>
+    st_transform(4326)
+  
+  taxon <- sf::st_drop_geometry(x$scientificname)[1]
+  
+  # we will determine which features have utiltity in predicting whether a 
+  # population in in a phenophase. 
+  ctrl <- caret::rfeControl(functions = caret::gamFuncs,
+                            method = "repeatedcv", number = 10,  repeats = 5,
+                            verbose = FALSE, rerank = TRUE, 
+                            allowParallel = TRUE, seeds = NA)
+  
+  inde <- as.matrix(sf::st_drop_geometry(x[,8:26]))
+  de <- sf::st_drop_geometry(x$Pct_Anthesis)
+  
+  cl <- parallel::makeCluster(parallel::detectCores(), type='PSOCK')
+  doParallel::registerDoParallel(cl)
+  lmProfile <- caret::rfe(
+    as.matrix(sf::st_drop_geometry(x[,8:26])), # independent variables
+    sf::st_drop_geometry(x$Pct_Anthesis), # dependent variables
+    sizes  = c(3, seq.int(from = 4, to = 10, by = 2)),
+    rank = TRUE, 
+    rfeControl = ctrl)
+  ParallelLogger::stopCluster(cl)
+  rm(cl)
+  
+  terms <- unique(c('doy', lmProfile[['optVariables']]))
+  formula <- as.formula(
+    paste(
+      "Pct_Anthesis ~ ",  paste0("s(", terms, ", bs = 'tp')", collapse = " + ")
+    )
+  )
+  cor_form <- as.formula("~ Latitude + Longitude")
+  
+  urGamm <- MuMIn::uGamm ; formals(urGamm)$na.action <- 'na.omit' 
+  formals(urGamm)$family <- 'binomial'; formals(urGamm)$method <- 'REML'
+  
+  mod.aspatial <- conv_ob(myTryCatch(urGamm(formula, data = x)))
+  mod.corExp <- conv_ob(myTryCatch(urGamm(
+    formula, data = x, correlation = nlme::corExp(form = cor_form, nugget=T))))
+  mod.corGaus <- conv_ob(myTryCatch(urGamm(
+    formula, data = x, correlation = nlme::corGaus(form = cor_form, nugget=T))))
+  mod.corSpher <- conv_ob(myTryCatch(urGamm(
+    formula, data = x, correlation = nlme::corSpher(form = cor_form, nugget=T))))
+  mod.corRatio <- conv_ob(myTryCatch(urGamm(
+    formula, data = x, correlation = nlme::corRatio(form = cor_form, nugget=T))))
+  mod.corLin <- conv_ob(myTryCatch(urGamm(
+    formula, data = x, correlation = nlme::corLin(form = cor_form, nugget=T))))
+  
+  tf <- unlist(lapply(X = mget(ls(pattern = 'mod[.]')), FUN = is.null))
+  rm(list = c(names(tf)[which(tf == TRUE)]))
+  
+  # select and refit the top model with method 'ML'
+  msel_tab <- MuMIn::model.sel(mget(ls(pattern = 'mod[.]')))
+  top_mod <- row.names(msel_tab[1,])
+  mod.final <- f_modeller(model = top_mod, data = x)
+  
+  # write out results to local #
+  msel_tab <- data.frame(msel_tab) |>
+    tibble::rownames_to_column('model')
+  
+  saveRDS(mod.final, 
+          file.path('../results/models', paste0(gsub(' ', '_', taxon), '.rds')))
+  
+  colnames(msel_tab) <- gsub('^s[.]', '', colnames(msel_tab))
+  colnames(msel_tab) <- gsub('\\..*$', '', colnames(msel_tab))
+  msel_tab <- data.frame(
+    lapply(msel_tab, function(y) if(is.numeric(y)) round(y, 5) else y)) 
+  write.csv(msel_tab, row.names = FALSE,
+            file.path('../results/selection_tables', paste0(gsub(' ', '_', taxon), '.csv')))
+  
+  return(mod.final)
+  
+}
+
+
