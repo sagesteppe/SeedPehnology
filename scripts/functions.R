@@ -244,7 +244,6 @@ pheno_abs <- function(x, estimates){
 }
 
 
-
 # assess the output from a function. 
 myTryCatch <- function(expr) {
   warn <- err <- NULL
@@ -259,6 +258,27 @@ myTryCatch <- function(expr) {
   list(value=value, warning=warn, error=err)
 }
 
+# only grab models which converged without any warnings. 
 conv_ob <- function(x){
   if(is.null(x$warning) & is.null(x$warning) == TRUE){return(x[['value']])}
+}
+
+# match and run the top model. 
+f_modeller <- function(model, type = c("mod.aspatial", "mod.corExp", "mod.corGaus",
+                                   'mod.corSpher', 'mod.corRatio', 'mod.corLin'), data){
+  type <- match.arg(type)
+  switch(
+    type,
+    mod.aspatial = mgcv::gamm(formula, data = data, method = 'ML', family = 'binomial'),
+    mod.corExp = mgcv::gamm(formula, data = data, method = 'ML', family = 'binomial',
+                            correlation = nlme::corExp(form = cor_form, nugget=T)),
+    mod.corGaus = mgcv::gamm(formula, data = data, method = 'ML', family = 'binomial',
+                             correlation = nlme::corGaus(form = cor_form, nugget=)), 
+    mod.corSpher = mgcv::gamm(formula, data = data, method = 'ML', family = 'binomial',
+                              correlation = nlme::corSpher(form = cor_form, nugget=T)), 
+    mod.corRatio = mgcv::gamm(formula, data = data, method = 'ML', family = 'binomial',
+                              correlation = nlme::corRatio(form = cor_form, nugget=T)),
+    mod.corLin = mgcv::gamm(formula, data = data, method = 'ML', family = 'binomial',
+                            correlation = nlme::corLin(form = cor_form, nugget=T))
+  )
 }

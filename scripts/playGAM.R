@@ -4,6 +4,7 @@ library(terra)
 
 # thin(loc.data = ,  lat.col = , long.col = , reps = 100, thin.par = 3, )
 setwd('~/Documents/SeedPhenology/scripts')
+source('functions.R')
 achy <- read.csv('../data/processed/high_priority_sheets.csv') %>% 
   filter(scientificname == 'achnatherum hymenoides')
 
@@ -69,14 +70,14 @@ modeller <- function(x){
                             verbose = FALSE, rerank = TRUE, 
                             allowParallel = TRUE, seeds = NA)
   
-  inde <- as.matrix(sf::st_drop_geometry(x[,8:23]))
+  inde <- as.matrix(sf::st_drop_geometry(x[,8:26]))
   de <- sf::st_drop_geometry(x$Pct_Anthesis)
   
   cl <- parallel::makeCluster(parallel::detectCores(), type='PSOCK')
   doParallel::registerDoParallel(cl)
   lmProfile <- caret::rfe(
-    inde, # independent variables
-    de, # dependent variables
+    as.matrix(sf::st_drop_geometry(x[,8:26])), # independent variables
+    sf::st_drop_geometry(x$Pct_Anthesis), # dependent variables
     sizes  = seq.int(from = 2, to = 10, by = 2),
     rank = TRUE, 
     rfeControl = ctrl)
@@ -96,55 +97,37 @@ modeller <- function(x){
   formals(urGamm)$family <- 'binomial'
   formals(urGamm)$method <- 'REML'
   
-  mod.aspatial <- urGamm(formula, data = x)
-  mod.corExp <- urGamm(
-    formula, data = x, correlation = nlme::corExp(form = cor_form, nugget=T))
-  mod.corGaus <- urGamm(
-    formula, data = x, correlation = nlme::corGaus(form = cor_form, nugget=T))
-  mod.corSpher <- urGamm(
-    formula, data = x, correlation = nlme::corSpher(form = cor_form, nugget=T))
-  mod.corRatio <- urGamm(
-    formula, data = x, correlation = nlme::corRatio(form = cor_form, nugget=T))
-  mod.corLin <- urGamm(
-    formula, data = x, correlation = nlme::corLin(form = cor_form, nugget=T))
+  mod.aspatial <- conv_ob(myTryCatch(urGamm(formula, data = x)))
+  mod.corExp <- conv_ob(myTryCatch(urGamm(
+    formula, data = x, correlation = nlme::corExp(form = cor_form, nugget=T))))
+  mod.corGaus <- conv_ob(myTryCatch(urGamm(
+    formula, data = x, correlation = nlme::corGaus(form = cor_form, nugget=T))))
+  mod.corSpher <- conv_ob(myTryCatch(urGamm(
+    formula, data = x, correlation = nlme::corSpher(form = cor_form, nugget=T))))
+  mod.corRatio <- conv_ob(myTryCatch(urGamm(
+    formula, data = x, correlation = nlme::corRatio(form = cor_form, nugget=T))))
+  mod.corLin <- conv_ob(myTryCatch(urGamm(
+    formula, data = x, correlation = nlme::corLin(form = cor_form, nugget=T))))
   
   tf <- unlist(lapply(X = mget(ls(pattern = 'mod[.]')), FUN = is.null))
   rm(list = c(names(tf)[which(tf == TRUE)]))
 
+  # select and refit the top model with method 'ML'
   msel_tab <- MuMIn::model.sel(mget(ls(pattern = 'mod[.]')))
   top_mod <- row.names(msel_tab[1,])
-  
-  if(top_mod == 'mod.aspatial'){
-    mod.final <- mgcv::gamm(formula, data = x, method = 'ML', family = 'binomial')
-  } else if(top_mod == 'mod.corExp'){
-    mod.final <- mgcv::gamm(formula, data = x, method = 'ML', family = 'binomial',
-                            correlation = nlme::corExp(form = cor_form, nugget=T))
-  } else if(top_mod == 'mod.corGaus'){
-    mod.final <- mgcv::gamm(formula, data = x, method = 'ML', family = 'binomial',
-                            correlation = nlme::corGaus(form = cor_form, nugget=T))
-  } else if(top_mod == 'mod.corSpher'){
-    mod.final <- mgcv::gamm(formula, data = x, method = 'ML', family = 'binomial',
-                            correlation = nlme::corSpher(form = cor_form, nugget=T))
-  } else if(top_mod == 'mod.corRatio'){
-    mod.final <- mgcv::gamm(formula, data = x, method = 'ML', family = 'binomial',
-                            correlation = nlme::corRatio(form = cor_form, nugget=T))
-  } else if(top_mod == 'mod.corLin'){
-    mod.final <- mgcv::gamm(formula, data = x, method = 'ML', family = 'binomial',
-                            correlation = nlme::corLin(form = cor_form, nugget=T))
-  }
+  mod.final <- f_modeller(model = top_mod, data = x)
   
   # write out results to local #
   msel_tab <- data.frame(msel_tab) |>
     tibble::rownames_to_column('model')
-  
-  mod.final <- mod.final[['gam']]
   
   saveRDS(mod.final, 
           file.path('../results/models', paste0(gsub(' ', '_', taxon), '.rds')))
   
   colnames(msel_tab) <- gsub('^s[.]', '', colnames(msel_tab))
   colnames(msel_tab) <- gsub('\\..*$', '', colnames(msel_tab))
-  msel_tab <- data.frame(lapply(msel_tab, function(y) if(is.numeric(y)) round(y, 5) else y) ) 
+  msel_tab <- data.frame(
+    lapply(msel_tab, function(y) if(is.numeric(y)) round(y, 5) else y)) 
   write.csv(msel_tab, row.names = FALSE,
     file.path('../results/selection_tables', paste0(gsub(' ', '_', taxon), '.csv')))
   
@@ -153,7 +136,13 @@ modeller <- function(x){
 }
 
 set.seed(28)
-modeller(achy)
+ob <- modeller(achy)
+
+
+
+
+
+
 
 
 # play with prediction
