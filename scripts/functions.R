@@ -20,10 +20,12 @@ specimen_sampler <- function(x, date, basepts, mindist, overpts, ...){
                                        fields = fields2getrecord) |> 
     dplyr::rename(all_of(fields2getrecord)) |>
     tidyr::drop_na(geopoint.lon, geopoint.lat, year, month, day) |> 
+    dplyr::filter(year > 1900) |>
     tidyr::unite('datecollected', year, month, day, sep = '-') |>
     dplyr::mutate(datecollected = as.Date(datecollected), 
                   doy = lubridate::yday(datecollected)) |> 
-    dplyr::filter(datecollected > date) |> # sensing data comes on line here
+    dplyr::filter(datecollected > date, 
+                  geopoint.lat > 1) |> # sensing data comes on line here
     dplyr::arrange(datecollected)
   
   if(nrow(text_result) > 2){
@@ -412,8 +414,7 @@ visual_review_flagger <- function(x){
 #' quick and dirty drop far off records and close dupes - see other repos for proper drops. 
 rec_selec <- function(x){
   
-  x <- st_as_sf(x, coords = c('geopoint.lon', 'geopoint.lat'), crs = 4326, remove = FALSE)
-  
+  x <- st_transform(x, 5070)
   nf <-  sf::st_nearest_feature(x)
   y <- x[ as.numeric(sf::st_distance(x, x[nf,], by_element = T) ) < 80000 , ]
   # remove far off records.
@@ -421,7 +422,6 @@ rec_selec <- function(x){
   # remove records right on top of each other. 
   nf <- sf::st_nearest_feature(y)
   z <- y[ as.numeric(sf::st_distance(y, y[nf,], by_element = T)) < 250, ] %>% 
-    sf::st_transform(5070) %>% 
     sf::st_buffer(250) 
   y <- y[ as.numeric(sf::st_distance(y, y[nf,], by_element = T)) > 250, ]
   
@@ -430,10 +430,11 @@ rec_selec <- function(x){
     dplyr::group_by(grps) %>% 
     dplyr::slice_sample(n = 1) %>% 
     sf::st_centroid() %>% 
-    sf::st_transform(4326) %>% 
     dplyr::select(-grps)
   
-  out <- dplyr::bind_rows(y, z)
+  out <- dplyr::bind_rows(y, z) %>% 
+    sf::st_transform(4326) 
+  
   return(out)
 }
 
