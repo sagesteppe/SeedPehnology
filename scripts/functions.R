@@ -367,3 +367,43 @@ modeller <- function(x){
 }
 
 
+#' this function flags records which warrant visual review as they are at extreme 
+#' ends of the distributions
+visual_review_flagger <- function(x){
+  
+  ob_r <- max(x$PC1, na.rm = T) - min(x$PC1, na.rm = T) # range of PC1 values. 
+  
+  flggr <- function(x){
+    qu <- quantile(x$doy,  probs = c(0.025, 0.95))
+    x$phen_flag <- ifelse(x$doy < qu[1] | x$doy > qu[2], 'Broad', NA)
+    return(x)
+  }
+  
+  if(ob_r < 0.3){
+    
+    x <- flggr(x)
+    
+  } else {
+    
+    x <- x |>
+      dplyr::mutate(
+        cuts = cut(PC1, breaks = 3, labels = F), 
+        qu_b_l = quantile(doy, probs = 0.025), 
+        qu_b_h = quantile(doy, probs = 0.95)
+      ) |> 
+      dplyr::group_by(cuts) |> 
+      dplyr::mutate(
+        qu_f_l = quantile(doy, probs = 0.025), 
+        qu_f_h = quantile(doy, probs = 0.95), 
+      ) |> 
+      dplyr::rowwise() |> 
+      dplyr::mutate(phen_flag = case_when(
+        doy < qu_b_l | doy > qu_b_h ~ 'Broad',
+        doy < qu_f_l | doy > qu_f_h ~ 'Fine'
+      ), .before = geometry) |>
+      dplyr::select(-cuts, -qu_b_l, -qu_b_h, -qu_f_l, -qu_f_h)
+    
+  }
+  return(x)
+}
+
