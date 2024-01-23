@@ -13,41 +13,33 @@ fields2getrecord <- c(
 names(fields2getrecord) <- c(
   'scientificname', 'geopoint.lat', 'geopoint.lon', 'collector', 'uuid', 'year', 'month', 'day')
 
-text_result <- ridigbio::idig_search(rq = list(scientificname = 'Clarkia purpurea'),
-                                     fields = fields2getrecord) |> 
-  dplyr::rename(all_of(fields2getrecord)) |>
-  tidyr::drop_na(geopoint.lon, geopoint.lat, year, month, day) |> 
-  tidyr::unite('datecollected', year, month, day, sep = '-') |>
-  dplyr::mutate(datecollected = as.Date(datecollected), 
-                doy = lubridate::yday(datecollected)) |> 
-  dplyr::filter(datecollected > '1981-01-01') |> # sensing data comes on line here
-  dplyr::arrange(datecollected)
 
-cypu <- st_as_sf(text_result, coords = c('geopoint.lon', 'geopoint.lat'), crs = 4326)
+napu <- specimen_sampler(x = 'Nassella pulchra', date = '1981-01-01') # grab records. 
+napu <- rec_selec(napu) # drop dupes and far off points
 
-ggplot() + 
-  geom_sf(data = cypu)
-
-# extract pca values for clustering
+# extract pca values
 
 preds <- rast('../results/spatial/gddPCA.tif')
 
-cypu <- terra::extract(preds, cypu, bind = TRUE) |>
+napu <- terra::extract(preds, napu, bind = TRUE) |>
   st_as_sf() %>% 
   drop_na(PC1)
 
-ob1 <- visual_review_flagger(cypu)
+# flag records for manual review. 
+napu <- visual_review_flagger(napu)
 
 ggplot() + 
-  geom_point(data = ob1, aes(x = PC1, y = doy, color = phen_flag))
+  geom_point(data = napu, aes(x = PC1, y = doy, color = phen_flag))
 
+
+# write out records here !!! and do it. 
 
 # select points to cluster which are actually in meaningful geographic proximity /
 # the points futher out will not require flowering absence records. 
 nf <- acle[ st_nearest_feature(acle), ]
 acle2clust <- acle[ as.numeric( st_distance(acle, nf, by_element = T) ) < 80000 , ] 
-
-clusts <- geoClust_wrap(acle2clust, 'PC1')
+ 
+clusts <- geoClust_wrap(acle2clust, 'PC1') # identify clusters here. 
 rm(nf, acle2clust)
 
 no_cores <- parallel::detectCores()
@@ -86,7 +78,6 @@ abvi <- extract(pca1, abvi, bind = TRUE) %>%
   st_as_sf()
 nf <- abvi[ st_nearest_feature(abvi), ]
 abvi2clust <- abvi[ as.numeric( st_distance(abvi, nf, by_element = T) ) < 80000 , ] 
-
 
 
 # note some species may begin flowering in upper DOY, and peak afterwards....

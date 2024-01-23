@@ -44,23 +44,24 @@ specimen_sampler <- function(x, date, basepts, mindist, overpts, ...){
     ) |>
     dplyr::select(scientificname, accessuri, datecollected, collector, doy, uuid)
   
-    if(nrow(records) < 100){basepts <- (nrow(records) -1); overpts <- 1}
+  
+ #   if(nrow(records) < 100){basepts <- (nrow(records) -1); overpts <- 1}
     
-    samples <- spsurvey::grts(
-      sf::st_transform(records, 5070), n_base = basepts, n_over = overpts, 
-      mindis = mindist, ...,
-      seltype = "proportional", aux_var = 'doy')
+ #   samples <- spsurvey::grts(
+#      sf::st_transform(records, 5070), n_base = basepts, n_over = overpts, 
+#      mindis = mindist, ...,
+#      seltype = "proportional", aux_var = 'doy')
     
-    samples <- dplyr::bind_rows(
-      samples[['sites_base']], samples[['sites_over']]
-    ) |>
-      dplyr::mutate(
-        siteID = paste0(siteuse, gsub('[A-z]', '', siteID)), 
-        collector = gsub(';.*$|,.*$', '', collector)
-      ) |>
-      dplyr::select(siteID, wgt, scientificname:geometry)
+#    samples <- dplyr::bind_rows(
+#      samples[['sites_base']], samples[['sites_over']]
+#    ) |>
+#      dplyr::mutate(
+#        siteID = paste0(siteuse, gsub('[A-z]', '', siteID)), 
+#        collector = gsub(';.*$|,.*$', '', collector)
+#      ) |>
+#      dplyr::select(siteID, wgt, scientificname:geometry)
     
-    return(samples)
+#    return(samples)
   } else{
     'Taxon Not Found'
   }
@@ -376,6 +377,7 @@ visual_review_flagger <- function(x){
   flggr <- function(x){
     qu <- quantile(x$doy,  probs = c(0.025, 0.95))
     x$phen_flag <- ifelse(x$doy < qu[1] | x$doy > qu[2], 'Broad', NA)
+    dplyr::relocate(x, phen_flag, .before = geometry)
     return(x)
   }
   
@@ -406,4 +408,34 @@ visual_review_flagger <- function(x){
   }
   return(x)
 }
+
+#' quick and dirty drop far off records and close dupes - see other repos for proper drops. 
+rec_selec <- function(x){
+  
+  x <- st_as_sf(x, coords = c('geopoint.lon', 'geopoint.lat'), crs = 4326, remove = FALSE)
+  
+  nf <-  sf::st_nearest_feature(x)
+  y <- x[ as.numeric(sf::st_distance(x, x[nf,], by_element = T) ) < 80000 , ]
+  # remove far off records.
+  
+  # remove records right on top of each other. 
+  nf <- sf::st_nearest_feature(y)
+  z <- y[ as.numeric(sf::st_distance(y, y[nf,], by_element = T)) < 250, ] %>% 
+    sf::st_transform(5070) %>% 
+    sf::st_buffer(250) 
+  y <- y[ as.numeric(sf::st_distance(y, y[nf,], by_element = T)) > 250, ]
+  
+  z$grps <- sf::st_intersects(z) 
+  z <- z %>% 
+    dplyr::group_by(grps) %>% 
+    dplyr::slice_sample(n = 1) %>% 
+    sf::st_centroid() %>% 
+    sf::st_transform(4326) %>% 
+    dplyr::select(-grps)
+  
+  out <- dplyr::bind_rows(y, z)
+  return(out)
+}
+
+
 
