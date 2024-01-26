@@ -7,6 +7,7 @@ output: html_document
 
 ```{r}
 library(tidyverse)
+library(sf)
 source('functions.R')
 ```
 
@@ -76,6 +77,75 @@ as.Date(206, origin = '1987-01-01')
 
 the above records were flagged by visual review of the specimen. During this process, the realization that the check for bimodality should have been performed, and the verification that certain species have many more records outside anthesis, called for a second batch of scoring. 
 
+
+```{r detect multimodal data}
+
+d <- st_read('../data/processed/high_priority_sheets/high_priority_sheets.shp') %>% 
+  mutate(scntfcnm = str_to_sentence(scntfcnm))
+splicies <- split(d, f = d$scntfcnm)
+ou <- sapply(X = splicies, FUN = function(x){diptest::dip(x$doy) })
+ou <- ou[ou < 0.03]
+sort(ou, decreasing = TRUE)
+
+modal_finder <- function(x){
+  
+  dd <- density(x$doy)
+  
+  vals <- data.frame(
+    valu = dd$y[dd$x >= 0 & dd$x <= 366], 
+    doy = round(dd$x[dd$x >= 0 & dd$x <= 366], 0)
+  )
+  
+  localMinima <- function(x) { # @ tommy on SO. 
+    # Use -Inf instead if x is numeric (non-integer)
+    y <- diff(c(.Machine$integer.max, x)) > 0L
+    rle(y)$lengths
+    y <- cumsum(rle(y)$lengths)
+    y <- y[seq.int(1L, length(y), 2L)]
+    if (x[[1]] == x[[2]]) {
+      y <- y[-1]
+    }
+    y
+  }
+  
+   localMaxima <- function(x) {
+  # Use -Inf instead if x is numeric (non-integer)
+   y <- diff(c(-.Machine$integer.max, x)) > 0L
+    rle(y)$lengths
+    y <- cumsum(rle(y)$lengths)
+    y <- y[seq.int(1L, length(y), 2L)]
+    if (x[[1]] == x[[2]]) {
+      y <- y[-1]
+    }
+    y
+  }
+  
+  ident_min <- vals$doy[localMinima(vals$valu) ]
+  plot(y = vals$valu, x = vals$doy, main = x$scntfcnm[1])
+  abline(v = ident_min , col="blue") 
+  abline(v = vals$doy[localMaxima(vals$valu) ], col = 'red')
+  
+  return(ident_min)
+  
+}
+
+sapply(X = splicies[11:15], FUN = function(x){diptest::dip(x$doy) }) # 1, 2, 3, 5
+ob <- unlist(lapply(splicies[15], modal_finder))
+
+# first, last peak are always kept. 
+# determine whether intermediate peaks deviate from  the density distribution
+
+```
+
+
+
+
+
+
+
+
+
+
 ```{r}
 
 sheets <- read.csv('../data/processed/high_priority_sheets-scored.csv') 
@@ -91,15 +161,12 @@ splicies <- Filter(function(x) nrow(x)>10, splicies)
 amdu <- filter(sheets, scntfcnm == 'Ambrosia dumosa')
 
 
-dippeR <- function(x){
-  
-  res <- diptest::dip(x$doy)
-  return(res)
-}
 
 ou <- sapply(X = splicies, FUN =dippeR)
 
-hist(splicies[['Thelesperma megapotamicum']]$doy)
+hist(splicies[['Hyptis emoryi']]$doy)
+
+d <- cut(splicies[['Thelesperma megapotamicum']]$doy, breaks = 2)
 
 sort(ou, decreasing = TRUE)
 ```
