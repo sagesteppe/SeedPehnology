@@ -299,8 +299,8 @@ modeller <- function(x){
   
   taxon <- sf::st_drop_geometry(x$scientificname)[1]
   
-  # we will determine which features have utiltity in predicting whether a 
-  # population in in a phenophase. 
+  # we will determine which features have utility in predicting whether a 
+  # population has individuals in a phenophase. 
   ctrl <- caret::rfeControl(functions = caret::gamFuncs,
                             method = "repeatedcv", number = 10,  repeats = 5,
                             verbose = FALSE, rerank = TRUE, 
@@ -320,10 +320,11 @@ modeller <- function(x){
   ParallelLogger::stopCluster(cl)
   rm(cl)
   
-  terms <- unique(c('doy', lmProfile[['optVariables']]))
+  terms <- gsub('doy', '', lmProfile[['optVariables']])
   formula <- as.formula(
     paste(
-      "Pct_Anthesis ~ ",  paste0("s(", terms, ", bs = 'tp')", collapse = " + ")
+      "Pct_Anthesis ~ ",  "s(doy, bs = 'cc') + ", # doy, is fixed, and has a smooth for cyclic data, bs = 'cc')
+      paste0("s(", terms, ", bs = 'tp')", collapse = " + ")
     )
   )
   cor_form <- as.formula("~ Latitude + Longitude")
@@ -377,7 +378,7 @@ visual_review_flagger <- function(x){
   ob_r <- max(x$PC1, na.rm = T) - min(x$PC1, na.rm = T) # range of PC1 values. 
   
   flggr <- function(x){
-    qu <- quantile(x$doy,  probs = c(0.025, 0.95))
+    qu <- quantile(x$doy,  probs = c(0.025, 0.975))
     x$phen_flag <- ifelse(x$doy < qu[1] | x$doy > qu[2], 'Broad', NA)
     dplyr::relocate(x, phen_flag, .before = geometry)
     return(x)
@@ -393,12 +394,12 @@ visual_review_flagger <- function(x){
       dplyr::mutate(
         cuts = cut(PC1, breaks = 3, labels = F), 
         qu_b_l = quantile(doy, probs = 0.025), 
-        qu_b_h = quantile(doy, probs = 0.95)
+        qu_b_h = quantile(doy, probs = 0.975)
       ) |> 
       dplyr::group_by(cuts) |> 
       dplyr::mutate(
         qu_f_l = quantile(doy, probs = 0.025), 
-        qu_f_h = quantile(doy, probs = 0.95), 
+        qu_f_h = quantile(doy, probs = 0.975), 
       ) |> 
       dplyr::rowwise() |> 
       dplyr::mutate(phen_flag = case_when(

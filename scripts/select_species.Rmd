@@ -5,7 +5,6 @@ date: "2024-01-10"
 output: html_document
 ---
 
-
 ```{r}
 library(tidyverse)
 source('functions.R')
@@ -42,7 +41,7 @@ sf::st_write(specs1, '../data/processed/high_priority_sheets/high_priority_sheet
 rm(specs1)
 ```
 
-```{r flag records at outer quantiles of flowering}
+```{r flag records at outer quantiles of flowering, eval = F}
 
 # extract pca values
 preds <- rast('../results/spatial/gddPCA.tif')
@@ -67,9 +66,41 @@ specs2 %>%
   filter(scntfcnm %in% priority_spp) %>% 
   select(scntfcnm, accessr, doy) %>% 
   arrange(scntfcnm, doy) %>% 
-  mutate(Anthesis = "") %>% 
-  write.csv( '../data/processed/high_priority_sheets.csv', row.names = F)
+  mutate(Anthesis = "") #%>% 
+ # write.csv( '../data/processed/high_priority_sheets.csv', row.names = F, )
 
 rm(preds, specs2, specs1)
+
+as.Date(206, origin = '1987-01-01')
+```
+
+the above records were flagged by visual review of the specimen. During this process, the realization that the check for bimodality should have been performed, and the verification that certain species have many more records outside anthesis, called for a second batch of scoring. 
+
+```{r}
+
+sheets <- read.csv('../data/processed/high_priority_sheets-scored.csv') 
+
+
+mode_dat <- filter(sheets, Anthesis == 1) %>% 
+  select(scntfcnm, doy)
+
+splicies <- split(sheets, f = sheets$scntfcnm)
+splicies <- Filter(function(x) nrow(x)>10, splicies)
+# check different methods for identifying multimodal distributions. 
+
+amdu <- filter(sheets, scntfcnm == 'Ambrosia dumosa')
+
+
+dippeR <- function(x){
+  
+  res <- diptest::dip(x$doy)
+  return(res)
+}
+
+ou <- sapply(X = splicies, FUN =dippeR)
+
+hist(splicies[['Thelesperma megapotamicum']]$doy)
+
+sort(ou, decreasing = TRUE)
 ```
 
