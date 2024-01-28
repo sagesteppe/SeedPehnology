@@ -108,7 +108,7 @@ modal_finder <- function(x){
     y
   }
   
-   localMaxima <- function(x) {
+  localMaxima <- function(x) {
   # Use -Inf instead if x is numeric (non-integer)
    y <- diff(c(-.Machine$integer.max, x)) > 0L
     rle(y)$lengths
@@ -120,22 +120,58 @@ modal_finder <- function(x){
     y
   }
   
-  ident_min <- vals$doy[localMinima(vals$valu) ]
-  plot(y = vals$valu, x = vals$doy, main = x$scntfcnm[1])
-  abline(v = ident_min , col="blue") 
-  abline(v = vals$doy[localMaxima(vals$valu) ], col = 'red')
+  ident_min <- vals$doy[localMinima(vals$valu) ] 
+  ident_max <- vals$doy[localMaxima(vals$valu) ] 
   
-  return(ident_min)
+  v_low <- vals[vals$doy %in% ident_min, ] |>
+    dplyr::group_by(doy) |>
+    dplyr::slice_sample(n = 1) |>
+    dplyr::pull(valu)
+  v_high <- vals[vals$doy %in% ident_max, ] |>
+    dplyr::group_by(doy) |>
+    dplyr::slice_sample(n = 1) |>
+    dplyr::pull(valu)
+
   
+  out <- data.frame(
+    'DOY' = c(ident_min, ident_max),
+    'Value' = c(v_low, v_high), 
+    'Variable' =  c(rep('Min', length(ident_min)), rep('Max', length(ident_max))), 
+    'prcnt.max' = (c(v_low, v_high) / max(v_high)) * 100
+    )  
+  
+  if(nrow(out[out$Variable == 'Max' & out$prcnt.max >= 10.0, ] > 1)){
+    doys <- out[out$Variable == 'Max' & out$prcnt.max >= 10.0, 'DOY']
+    min <- out[out$Variable == 'Min' & out$DOY > doys[1] & out$DOY < doys[2],]
+    min <- min[ which.min(min$Value), ]
+    
+    if(min$prcnt.max >= 20.0){min$DOY <- out[ which.min(out$DOY), 'DOY']}
+  } 
+  
+  hist(x = x$doy, main = x$scntfcnm[1], xlab = 'Day of Year', prob = TRUE, 
+       ylim = c(0, max(vals$valu)), col = '#F3E9DC', xlim = c(0, 365))
+  lines(y = vals$valu, x = vals$doy, lwd = 2)
+  abline(v = ident_min , col="#007FFF", lwd = 2, lty = 2) 
+  abline(v = ident_max, col = '#590925', lwd = 2, lty = 2)
+  abline(v = min$DOY, col = 'red', lwd = 3)
+
+  # if any max peaks are greater than 10%, determine the lowest minimum values between them. 
+  return(out)
+  return(list(out, min))
+
 }
 
 sapply(X = splicies[11:15], FUN = function(x){diptest::dip(x$doy) }) # 1, 2, 3, 5
-ob <- unlist(lapply(splicies[15], modal_finder))
+ob <- lapply(splicies[34:40], modal_finder)
 
-# first, last peak are always kept. 
-# determine whether intermediate peaks deviate from  the density distribution
+  hist(x = splicies[[33]]$doy, prob = TRUE)
+  lines(density(splicies[[33]]$doy), lwd = 2)
+
 
 ```
+
+
+
 
 
 
