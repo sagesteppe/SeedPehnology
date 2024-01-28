@@ -441,3 +441,56 @@ rec_selec <- function(x){
 
 
 
+# identify local minima
+l_min <- function(x){
+  
+  localMinima <- function(x) { # @ tommy on SO. 
+    # Use -Inf instead if x is numeric (non-integer)
+    y <- diff(c(.Machine$integer.max, x)) > 0L
+    rle(y)$lengths
+    y <- cumsum(rle(y)$lengths)
+    y <- y[seq.int(1L, length(y), 2L)]
+    if (x[[1]] == x[[2]]) {
+      y <- y[-1]
+    }
+    y
+  }
+  
+  ident_min <- x$doy[localMinima(x$valu) ] 
+  v_low <- x[x$doy %in% ident_min, ] |>
+    dplyr::group_by(doy) |>
+    dplyr::slice_sample(n = 1) |>
+    dplyr::pull(valu)
+  
+  return(list(v_low, ident_min))
+  
+}
+
+
+
+# identify local maxima
+l_max <- function(x){
+  
+  localMaxima <- function(x) {
+    # Use -Inf instead if x is numeric (non-integer)
+    y <- diff(c(-.Machine$integer.max, x)) > 0L
+    rle(y)$lengths
+    y <- cumsum(rle(y)$lengths)
+    y <- y[seq.int(1L, length(y), 2L)]
+    if (x[[1]] == x[[2]]) {
+      y <- y[-1]
+    }
+    y
+  }
+  
+  ident_max <- x$doy[localMaxima(x$valu) ] 
+  v_high <- x[x$doy %in% ident_max, ] |>
+    dplyr::group_by(doy) |>
+    dplyr::slice_sample(n = 1) |>
+    dplyr::pull(valu)
+  
+  return(list(v_high, ident_max))
+  
+}
+
+
