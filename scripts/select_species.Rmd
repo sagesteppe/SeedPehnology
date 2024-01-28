@@ -83,56 +83,45 @@ the above records were flagged by visual review of the specimen. During this pro
 d <- st_read('../data/processed/high_priority_sheets/high_priority_sheets.shp') %>% 
   mutate(scntfcnm = str_to_sentence(scntfcnm))
 splicies <- split(d, f = d$scntfcnm)
-ou <- sapply(X = splicies, FUN = function(x){diptest::dip(x$doy) })
+ou <- sapply(X = splicies, FUN = function(x){diptest::dip(x$doy) }) # this test seems useless. 
 ou <- ou[ou < 0.03]
-sort(ou, decreasing = TRUE)
+sort(ou, decreasing = F)
 
-modal_finder <- function(x){
-  
-  dd <- density(x$doy)
-  
-  vals <- data.frame(
-    valu = dd$y[dd$x >= 0 & dd$x <= 366], 
-    doy = round(dd$x[dd$x >= 0 & dd$x <= 366], 0)
-  )
-  
-  low <- l_min(vals); high <- l_max(vals)
-  v_low <- low[[1]]; v_high <- high[[1]] 
-  ident_min <- low[[2]]; ident_max <- high[[2]]
-  
-  out <- data.frame(
-    'DOY' = c(ident_min, ident_max),
-    'Value' = c(v_low, v_high), 
-    'Variable' =  c(rep('Min', length(ident_min)), rep('Max', length(ident_max))), 
-    'prcnt.max' = (c(v_low, v_high) / max(v_high)) * 100
-    )  
-  
-  if(nrow(out[out$Variable == 'Max' & out$prcnt.max >= 10.0, ]) > 1){
-    
-    doys <- out[out$Variable == 'Max' & out$prcnt.max >= 10.0, 'DOY']
-    min <- out[out$Variable == 'Min' & out$DOY > doys[1] & out$DOY < doys[2],]
-    min <- min[ which.min(min$Value), ]
-    
-    if(min$prcnt.max >= 40){min$DOY <- 999}
-  } else {min <- data.frame(
-    DOY = 999)
-  }
-  
-  hist(x = x$doy, main = x$scntfcnm[1], xlab = 'Day of Year (DOY)', prob = TRUE, 
-       ylim = c(0, max(vals$valu)+0.005), col = '#F3E9DC', xlim = c(0, 365))
-  lines(y = vals$valu, x = vals$doy, lwd = 2)
-  abline(v = ident_min , col="#007FFF", lty = 2) 
-  abline(v = ident_max, col = '#590925', lty = 2)
-  abline(v = min$DOY, col = 'red', lwd = 3)
-  legend("topright", legend=c("Maxima", "Minima", 'Split'),
-       col=c("#590925", "#007FFF", 'red'), lty = c(2, 2, 1), cex=0.8)
-  mtext(paste0('n = ', length(x$doy)), side=1, line=3.5, at=350)
-  
-  return(list(out, min))
+ob <- lapply(splicies, modal_finder)
+ob <- data.frame(scntfcnm = names(ob), doy = as.numeric(ob))
+ob1 <- mutate(ob, doy = case_when(
+  scntfcnm == 'Acamptopappus sphaerocephalus' ~ 215,
+  scntfcnm == 'Achnatherum speciosum' ~ 250,
+  scntfcnm == 'Adenostoma sparsifolium' ~ 999,
+  scntfcnm == 'Astragalus eremiticus' ~ 240,
+  scntfcnm == 'Atriplex canescens' ~ 999,
+  scntfcnm == 'Atriplex confertifolia' ~ 999,
+  scntfcnm == 'Balsamorhiza serrata' ~ 180,
+  scntfcnm == 'Centromadia elegans' ~ 999,
+  scntfcnm == 'Cylindropuntia bigelovii' ~ 210,
+  scntfcnm == 'Cylindropuntia bigelovii' ~ 210,
+  scntfcnm == 'Danthonia californica' ~ 999,
+  scntfcnm == 'Erigeron breweri' ~ 999,
+  scntfcnm == 'Lomatium nudicaule' ~ 999,
+  scntfcnm == 'Machaeranthera canescens' ~ 999,
+  scntfcnm == 'Machaeranthera gracilis' ~ 190,
+  scntfcnm == 'Muhlenbegia rigens' ~ 999,
+  scntfcnm == 'Penstemon acuminatus' ~ 999,
+  scntfcnm == 'Phlox stansburyi' ~ 210,
+  scntfcnm == 'Psorothamnus schottii' ~ 225,
+  scntfcnm == 'Rosa californica' ~ 999,
+  scntfcnm == 'Rubus ursinus' ~ 999,
+  scntfcnm == 'Sambucus mexicana' ~ 999,
+  scntfcnm == 'Sphaeralcea munroana' ~ 999,
+  scntfcnm == 'Stanleya pinnata' ~ 999,
+  scntfcnm == 'Symphyotrichum subulatum' ~ 999,
+  scntfcnm == 'Triteleia hyacinthina' ~ 999,
+  .default = as.numeric(doy)
+)) %>% 
+  filter(doy != 999)
 
-}
 
-ob <- lapply(splicies[61:80], modal_finder)
+rm(ou)
 ```
 
 

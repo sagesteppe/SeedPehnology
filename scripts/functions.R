@@ -490,7 +490,58 @@ l_max <- function(x){
     dplyr::pull(valu)
   
   return(list(v_high, ident_max))
-  
+
 }
 
+
+#' find splits for modal distributions at a set threshold and plot all data for visual review
+
+modal_finder <- function(x){
+  
+  dd <- density(x$doy)
+  
+  vals <- data.frame(
+    valu = dd$y[dd$x >= 0 & dd$x <= 366], 
+    doy = round(dd$x[dd$x >= 0 & dd$x <= 366], 0)
+  )
+  
+  low <- l_min(vals); high <- l_max(vals)
+  v_low <- low[[1]]; v_high <- high[[1]] 
+  ident_min <- low[[2]]; ident_max <- high[[2]]
+  
+  out <- data.frame( # no longer returned. 
+    'DOY' = c(ident_min, ident_max),
+    'Value' = c(v_low, v_high), 
+    'Variable' =  c(rep('Min', length(ident_min)), rep('Max', length(ident_max))), 
+    'prcnt.max' = (c(v_low, v_high) / max(v_high)) * 100
+  )  
+  
+  if(nrow(out[out$Variable == 'Max' & out$prcnt.max >= 10.0, ]) > 1){
+    
+    doys <- out[out$Variable == 'Max' & out$prcnt.max >= 10.0, 'DOY']
+    min <- out[out$Variable == 'Min' & out$DOY > doys[1] & out$DOY < doys[2],]
+    min <- min[ which.min(min$Value), ]
+    
+    if(min$prcnt.max >= 70){min <- 999} else{min <- min$DOY}
+  } else {min <- 999}
+  
+  
+  png(filename = paste0('../results/density_curves/', 
+                        gsub(' ', '_', sf::st_drop_geometry(x$scntfcnm[1])), '.png'),
+      width = 480, height = 320)
+  hist(x = x$doy, main = x$scntfcnm[1], xlab = 'Day of Year (DOY)', prob = TRUE, 
+       ylim = c(0, max(vals$valu)+0.005), col = '#F3E9DC', xlim = c(0, 365))
+  axis(side = 1, at = seq(0, 350, by = 50), labels = T)
+  lines(y = vals$valu, x = vals$doy, lwd = 2)
+  abline(v = ident_min , col="#007FFF", lty = 2) 
+  abline(v = ident_max, col = '#590925', lty = 2)
+  abline(v = min, col = 'red', lwd = 3)
+  legend("topright", legend=c("Maxima", "Minima", 'Split'),
+         col=c("#590925", "#007FFF", 'red'), lty = c(2, 2, 1), cex=0.8)
+  mtext(paste0('n = ', length(x$doy)), side=1, line=3.5, at=350)
+  dev.off()
+  
+  return(min)
+  
+}
 
