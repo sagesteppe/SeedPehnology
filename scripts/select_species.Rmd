@@ -124,7 +124,6 @@ rm(ou, splicies, ob)
 ```
 
 
-
 ```{r identify collections commonly made outside of anthesis}
 
 d <- read.csv('../data/processed/high_priority_sheets-scored.csv') %>% 
@@ -169,10 +168,64 @@ rm(dirty, d)
 
 Identify records in quantiles. 
 
-```{r}
+```{r identify records for second batch of scoring }
+
+# extract pca values
+preds <- terra::rast('../results/spatial/gddPCA.tif')
+specs1 <- st_read('../data/processed/high_priority_sheets/high_priority_sheets.shp',
+                  quiet = T) %>% 
+  filter(scntfcnm %in% c(dirty1$scntfcnm, ob1$scntfcnm))
+
+specs1 <- terra::extract(preds, specs1, bind = TRUE) |>
+  st_as_sf() %>% 
+  drop_na(PC1)
+
+rm(preds)
+# split records with bimodal flowering. 
+bimodals <- inner_join(specs1, rename(ob1, 'split' = doy), by = 'scntfcnm') %>% 
+  mutate(split = if_else(doy < split, 'EARLY', 'LATE'))
+
+split_bimodals <- split(bimodals, f = ~ bimodals$scntfcnm + bimodals$split)
+split_bimodals <- lapply(split_bimodals, visual_review_flagger, probs = c(0.025, 0.975))
+
+sb <- split_bimodals %>%
+  map(mutate, phen_flag = as.character(phen_flag)) %>% 
+  bind_rows() %>% 
+  drop_na(phen_flag) %>% 
+  sf::st_drop_geometry() %>% # remove records which we already scored, and restrict to 
+  # our species of interest.
+  filter(scntfcnm %in% ob1$scntfcnm, !accessr %in% d$accessr) %>% 
+  select(scntfcnm, accessr, doy) %>% 
+  arrange(scntfcnm, doy) %>% 
+  mutate(Anthesis = "")
 
 
+# flag records for further manual review. 
+specs1 <- split(specs1, f = specs1$scntfcnm)
+specs1 <- lapply(specs1, visual_review_flagger, probs = c(0.05, 0.95))
 
+dirty1 <- ungroup(dirty1)
+specs2 <- specs1 %>%
+  bind_rows() %>% 
+  drop_na(phen_flag) %>% 
+  sf::st_drop_geometry() %>% # remove records which we already scored, and restrict to 
+  # our speices of interest.
+  filter(scntfcnm %in% dirty1$scntfcnm, !accessr %in% d$accessr) %>% 
+  select(scntfcnm, accessr, doy) %>% 
+  arrange(scntfcnm, doy) %>% 
+  mutate(Anthesis = "", # select only the time troublesome time period
+         period = if_else(doy < mean(doy), 'E', 'L')) %>% 
+  inner_join(., select(dirty1, scntfcnm, period), by = join_by(scntfcnm, period)) %>% 
+  select(-period) %>% 
+  filter(! accessr %in% sb$accessr)
+
+
+bind_rows(sb, specs2) %>% 
+  arrange(scntfcnm, doy) %>% 
+  write.csv(., '../data/processed/second_phenology_review.csv', row.names = F)
+
+
+rm(sb, specs2, dirty1, split_bimodals, bimodals, ob1, specs1)
 ```
 
 
