@@ -54,7 +54,7 @@ specs1 <- terra::extract(preds, specs1, bind = TRUE) |>
 
 # flag records for manual review. 
 specs1 <- split(specs1, f = specs1$scntfcn)
-specs1 <- lapply(specs1, visual_review_flagger)
+specs1 <- lapply(specs1, visual_review_flagger, probs = c(0.025, 0.975))
 specs2 <- bind_rows(specs1)
 
 priority_spp <- spp %>% 
@@ -76,7 +76,6 @@ as.Date(206, origin = '1987-01-01')
 ```
 
 the above records were flagged by visual review of the specimen. During this process, the realization that the check for bimodality should have been performed, and the verification that certain species have many more records outside anthesis, called for a second batch of scoring. 
-
 
 ```{r detect multimodal data}
 
@@ -121,43 +120,65 @@ ob1 <- mutate(ob, doy = case_when(
   filter(doy != 999)
 
 
-rm(ou)
+rm(ou, splicies, ob)
 ```
 
 
 
+```{r identify collections commonly made outside of anthesis}
 
+d <- read.csv('../data/processed/high_priority_sheets-scored.csv') %>% 
+  mutate(comments = na_if(comments, '')) %>% 
+  filter((comments != "str") %>% replace_na(TRUE)) %>% 
+  drop_na(Anthesis) 
 
+d1 <- d %>% # keep records which weren't wonky. 
+  group_by(scntfcnm, Anthesis) %>% 
+  summarise(nAnt = n()) %>% 
+  mutate(
+    recs = sum(nAnt),
+    nAnt = nAnt / recs)
 
+filter(d1, n() == 1) # totally clean
+filter(d1, n() == 2) %>% 
+  filter(Anthesis == 0, nAnt <= 0.5)
+dirty <- filter(d1, n() == 2) %>% 
+  filter(Anthesis == 0, nAnt >= 0.5)
 
+rm(d1)
+# for the dirty species, we will determine whether both sides have specimens
+# outside the desired phenophase or whether only  a single side does. 
+# we will only evaluate specimens on the afflicted end(s). 
 
+dirty1 <- filter(d, scntfcnm %in% dirty$scntfcnm) %>% 
+  group_by(scntfcnm) %>% 
+  mutate(
+    avg_fl = mean(doy), 
+    period = if_else(doy < avg_fl, 'E', 'L')
+    ) %>% 
+  group_by(scntfcnm, Anthesis, period) %>% 
+  summarise(nAnt = n()) %>% 
+  mutate(
+    recs = sum(nAnt),
+    nAnt = nAnt / recs
+  ) %>% 
+  filter(Anthesis == 0, nAnt >= 0.5)
+  
+rm(dirty, d)
+```
 
-
-
-
+Identify records in quantiles. 
 
 ```{r}
 
-sheets <- read.csv('../data/processed/high_priority_sheets-scored.csv') 
 
 
-mode_dat <- filter(sheets, Anthesis == 1) %>% 
-  select(scntfcnm, doy)
-
-splicies <- split(sheets, f = sheets$scntfcnm)
-splicies <- Filter(function(x) nrow(x)>10, splicies)
-# check different methods for identifying multimodal distributions. 
-
-amdu <- filter(sheets, scntfcnm == 'Ambrosia dumosa')
-
-
-
-ou <- sapply(X = splicies, FUN =dippeR)
-
-hist(splicies[['Hyptis emoryi']]$doy)
-
-d <- cut(splicies[['Thelesperma megapotamicum']]$doy, breaks = 2)
-
-sort(ou, decreasing = TRUE)
 ```
+
+
+
+
+
+
+
 
