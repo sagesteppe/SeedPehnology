@@ -125,7 +125,6 @@ rm(ocean)
 ```
 
 
-
 create a raster of latitude, this will serve as our surrogate for day length
 
 ```{r}
@@ -133,5 +132,17 @@ che <- rast('../data/spatial/processed/CHELSA.tif')
 lat <- init(che, 'y')
 
 writeRaster(che, '../data/spatial/processed/latitude.tif', overwrite = TRUE)
+```
+
+
+```{r}
+
+p <- '../data/spatial/raw'
+f <- file.path(p, list.files(p, pattern = 'nc'))
+
+che <- rast('../data/spatial/processed/CHELSA.tif')
+lapply(f, speidR, template = che, pout = '../data/spatial/processed')
+
+rm(p, f, che)
 ```
 

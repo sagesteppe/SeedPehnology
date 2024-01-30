@@ -545,3 +545,24 @@ modal_finder <- function(x){
   
 }
 
+
+#' subset SPEI data to domain and resample to grains
+speidR <- function(x, template, pout){
+  
+  x <- rast(x)
+  
+  dttm <- c(paste0(rep(1950:2022, each = 12), '-', month.abb), 
+            paste0(rep(2023, each = 9), '-', month.abb[1:9]))
+  lyr_name <- gsub('[.]nc', '', basename(sources(x)))
+  L <- dim(x)[3]
+  
+  names(x)  <- paste0(lyr_name, '-', dttm)
+  x <- x[[361:L]]
+  
+  x <- terra::crop(template, x)
+  x <- terra::resample(template, x)
+  
+  terra::writeCDF(x, 
+                  filename = file.path(pout, paste0(lyr_name, '.nc')), 
+                  varname = lyr_name) 
+}
