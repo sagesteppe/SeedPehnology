@@ -113,8 +113,6 @@ names(che) <- gsub('CHELSA_|_1981.*$', '', names(che))
 writeRaster(che, '../data/spatial/processed/CHELSA.tif', overwrite = TRUE)
 ```
 
-
-
 Mask the data to terrestrial surfaces
 ```{r}
 che <- rast('../data/spatial/processed/CHELSA.tif')
@@ -124,5 +122,16 @@ che <- mask(che, ocean, inverse= T)
 writeRaster(che, '../data/spatial/processed/CHELSA.tif', overwrite = TRUE)
 
 rm(ocean)
+```
+
+
+
+create a raster of latitude, this will serve as our surrogate for day length
+
+```{r}
+che <- rast('../data/spatial/processed/CHELSA.tif')
+lat <- init(che, 'y')
+
+writeRaster(che, '../data/spatial/processed/latitude.tif', overwrite = TRUE)
 ```
 
