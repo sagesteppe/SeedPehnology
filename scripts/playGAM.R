@@ -40,7 +40,6 @@ achy <- terra::extract(preds, text_result, bind = TRUE) |>
   st_as_sf()
 
 
-
 ## we don't have much scored data, so we will impute NA bulk density data ##
 achy <- achy |>
   mutate(

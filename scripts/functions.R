@@ -104,10 +104,27 @@ geoClust_wrap <- function(x, clust_vars){
   # cluster the trees
   tree <- ClustGeo::hclustgeo(D0, D1, alpha = opt_alpha)
   clusters <- cutree(tree, K)
-  
-  # return the modified input object
+
+  # if any cluster < 10 members, add them to the most geographically proximal group. 
   ob <- dplyr::bind_cols(x, ClusterID = clusters) 
-  return(ob)
+  
+  small_clust <- ob |>
+    dplyr::group_by(ClusterID) |>
+    dplyr::filter(n() <= 10) |>
+    dplyr::pull(ClusterID)
+  
+  if(length(small_clust) > 0){
+    obs_small <- dplyr::filter(ob, ClusterID %in% small_clust)
+    ref <- dplyr::filter(ob, !ClusterID %in% small_clust)
+    newClusts <- sf::st_drop_geometry(
+      ref[ sf::st_nearest_feature(obs_small, ref), 'ClusterID'])
+    ob <- dplyr::bind_rows(
+      dplyr::bind_cols(select(obs_small, -ClusterID), newClusts) , ref) |>
+      dplyr::mutate(ClusterID = as.numeric(ClusterID))
+    rownames(ob) <- 1:nrow(ob)
+  }
+  
+  return(ob)   # return the modified input object
 }
 
 
@@ -121,18 +138,19 @@ geoClust_wrap <- function(x, clust_vars){
 initiation_cessation <- function(x, iter, bs, n_cores){
   
   if(missing(iter)){iter <- 250; 
-  message('# of iterations not supplied to `iter` defaults to 250')}
+  message('Number of iterations not supplied to `iter` defaults to 250')}
   if(missing(n_cores)){n_cores <- parallel::detectCores(); 
-  message('# of cores not supplied to `n_cores` defaults to all, e.g. parallel::detectCores()')}
+  message('Number of cores not supplied to `n_cores` defaults to all, e.g. `parallel::detectCores()`')}
   if(missing(bs)){bs <- n_cores;
-  message('# of bootstrap reps not supplied to `bs` defaults to n_cores')}
+  message('Number of bootstrap reps not supplied to `bs` defaults to n_cores')}
   
   grps <- split(x, f = x$ClusterID)
   grps <- lapply(grps, '[[', 'doy')
-  
+
   initiation <- parallel::mclapply(
     X = grps, FUN = phenesse::weib_percentile_ci, mc.cores = n_cores,
     iterations = iter, percentile = 0.01, bootstraps = bs, conf = 0.9)
+  
   cessation <- parallel::mclapply(
     X = grps, FUN = phenesse::weib_percentile_ci, mc.cores = n_cores,
     iterations = iter, percentile = 0.99, bootstraps = bs, conf = 0.9)
@@ -156,13 +174,13 @@ initiation_cessation <- function(x, iter, bs, n_cores){
 #' @param event either 'initiation' or 'cessation'
 doy_gen <- function(x, event){
   
-  ci_event <- round(x[x$event == event, 'estimate'])
-  
   if(event == 'cessation'){
-    doys <- seq.int(ci_event + 28, ci_event)
+    ci_event <- round(x[x$event == event, 'high_ci'])
+    doys <- seq.int(ci_event + 28, ci_event+7)
   } else {
-    doys <- seq.int(ci_event - 28, ci_event)
-  }
+    ci_event <- round(x[x$event == event, 'low_ci'])
+    doys <- seq.int(ci_event - 28, ci_event-7)
+  } 
   
   doys <- sample(doys, 
                  size = x[x$event == event, 'observations'],  replace = TRUE)
@@ -207,7 +225,7 @@ pheno_abs <- function(x, estimates){
   
   # identify records in clusters which have a nearest neighbor belonging to a 
   # different cluster
-  
+  dmat <- sf::st_nearest_feature(out)
   nearestClusterMismatch <- which( sf::st_drop_geometry(out[,'ClusterID']) 
                                    != sf::st_drop_geometry(out[dmat, 'ClusterID']) )
   

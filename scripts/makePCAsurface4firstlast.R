@@ -3,7 +3,7 @@ library(terra)
 setwd('~/Documents/SeedPhenology/scripts')
 
 p <- '../data/spatial/processed'
-preds <- rast(file.path(p, list.files(p)))
+preds <- rast(file.path(p, list.files(p, pattern = 'tif'))[1:3])
 
 set.seed(27)
 vars <- spatSample(preds, 15000)
@@ -46,3 +46,4 @@ dim(comp2)[1] * dim(comp2)[2] / cp1_c # one quarter the size. ;-)
 writeRaster(comp2, '../results/spatial/gddPCA.tif', overwrite = TRUE)
 
 rm(comp1, comp2, cp1_c)
+

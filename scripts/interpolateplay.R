@@ -83,12 +83,6 @@ abvi2clust <- abvi[ as.numeric( st_distance(abvi, nf, by_element = T) ) < 80000 
 # note some species may begin flowering in upper DOY, and peak afterwards....
 # see for example abronia villosa. 
 hist(abvi$doy)
-rm(abvi)s
+rm(abvi)
 
  
-
-
-## Perhaps some species are bimodal in flowering dates!!! 
-# we can test bimodal distributions using a fn from LaplacesDemon 
-LaplacesDemon::is.bimodal(data)
-

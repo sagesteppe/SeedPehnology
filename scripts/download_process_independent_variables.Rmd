@@ -15,6 +15,7 @@ URL_LIST=$(<../data/raw/envidatS3paths.txt)
 ```{r}
 library(terra)
 library(sf)
+source('functions.R')
 ```
 
 ```{r define domain for cropping}
@@ -131,7 +132,7 @@ create a raster of latitude, this will serve as our surrogate for day length
 che <- rast('../data/spatial/processed/CHELSA.tif')
 lat <- init(che, 'y')
 
-writeRaster(che, '../data/spatial/processed/latitude.tif', overwrite = TRUE)
+writeRaster(lat, '../data/spatial/processed/latitude.tif', overwrite = TRUE)
 ```
 
 
