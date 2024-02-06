@@ -5,14 +5,9 @@ library(terra)
 # thin(loc.data = ,  lat.col = , long.col = , reps = 100, thin.par = 3, )
 setwd('~/Documents/SeedPhenology/scripts')
 source('functions.R')
-achy <- read.csv('../data/processed/high_priority_sheets.csv') %>% 
-  filter(scientificname == 'achnatherum hymenoides')
 
-# subset to scored sheets, and add '0' when a phenophase was not observed. 
-achy <- achy %>% 
-  dplyr::select(-accessuri) |>
-  filter(! if_all(Pct_Bud:Pct_Dropped, ~ is.na(.))) |>
-  mutate(across(Pct_Bud:Pct_Dropped, ~ replace_na(.x, 0)))
+
+
 
 # now add spatial attributes to data. These will be used to look up the 
 # relevant independent variables
@@ -48,15 +43,8 @@ achy <- achy |>
          across(Pct_Bud:Pct_Dropped, ~ ifelse(.x > 0, 1, .x)))
 
 
-## now we will include the longitude and latitude as a correlation term to avoid
-# inflating the residuals
-
-
-
 set.seed(28)
 ob <- modeller(achy)
-
-
 
 
 

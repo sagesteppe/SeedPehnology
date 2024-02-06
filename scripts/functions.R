@@ -116,14 +116,18 @@ geoClust_wrap <- function(x, clust_vars){
   if(length(small_clust) > 0){
     obs_small <- dplyr::filter(ob, ClusterID %in% small_clust)
     ref <- dplyr::filter(ob, !ClusterID %in% small_clust)
+    
+    if(nrow(ref) == 0){
+      ob$ClusterID <- 1
+    } else {
     newClusts <- sf::st_drop_geometry(
       ref[ sf::st_nearest_feature(obs_small, ref), 'ClusterID'])
     ob <- dplyr::bind_rows(
       dplyr::bind_cols(select(obs_small, -ClusterID), newClusts) , ref) |>
       dplyr::mutate(ClusterID = as.numeric(ClusterID))
     rownames(ob) <- 1:nrow(ob)
+    }
   }
-  
   return(ob)   # return the modified input object
 }
 
@@ -131,10 +135,10 @@ geoClust_wrap <- function(x, clust_vars){
 #' calculate the initiation and cessation of a phenophase using phenesse 
 #' this function is intended to calculate these variables for clusters of populations
 #' of a species. For example the output of geoClust_wrap
-#' @param x output of geoClust_wrap
-#' @param iter the number of iterations to perform see phenesse::weib_percentile_ci. defaults to 250 here, 500 is their suggestion.
-#' @param bs the number of bootstraps to perform to generate a confidence interval, note these BS take considerably longer than a typical bs sampling event, Sys.time(initiation_cessation, bs = 10) to get a feel. Defaults to the number of supplied cores. 
-#' @param n_cores the number of cores to use while processing the records, defaults to all cores.
+#' @param x output of geoClust_wrap 
+#' @param iter the number of iterations to perform see phenesse::weib_percentile_ci. defaults to 250 here, 500 is their suggestion. 
+#' @param bs the number of bootstraps to perform to generate a confidence interval, note these BS take  considerably longer than a typical bs sampling event, Sys.time(initiation_cessation, bs = 10) to get a feel. Defaults to the number of supplied cores.  
+#' @param n_cores the number of cores to use while processing the records, defaults to all cores. 
 initiation_cessation <- function(x, iter, bs, n_cores){
   
   if(missing(iter)){iter <- 250; 
@@ -144,50 +148,73 @@ initiation_cessation <- function(x, iter, bs, n_cores){
   if(missing(bs)){bs <- n_cores;
   message('Number of bootstrap reps not supplied to `bs` defaults to n_cores')}
   
-  grps <- split(x, f = x$ClusterID)
-  grps <- lapply(grps, '[[', 'doy')
-
-  initiation <- parallel::mclapply(
-    X = grps, FUN = phenesse::weib_percentile_ci, mc.cores = n_cores,
-    iterations = iter, percentile = 0.01, bootstraps = bs, conf = 0.9)
+  if(length(unique(x$ClusterID)) > 1){
+    
+    grps <- split(x, f = x$ClusterID)
+    grps <- lapply(grps, '[[', 'doy')
+    
+    initiation <- parallel::mclapply(
+      X = grps, FUN = phenesse::weib_percentile_ci, mc.cores = n_cores,
+      iterations = iter, percentile = 0.01, bootstraps = bs, conf = 0.9)
   
-  cessation <- parallel::mclapply(
-    X = grps, FUN = phenesse::weib_percentile_ci, mc.cores = n_cores,
-    iterations = iter, percentile = 0.99, bootstraps = bs, conf = 0.9)
+    cessation <- parallel::mclapply(
+      X = grps, FUN = phenesse::weib_percentile_ci, mc.cores = n_cores,
+      iterations = iter, percentile = 0.99, bootstraps = bs, conf = 0.9)
+  } else {
+    vals <- x$doy
+    initiation <- 
+      phenesse::weib_percentile_ci(vals, iterations = iter, percentile = 0.01, 
+                                   bootstraps = bs, conf = 0.9)
+    cessation <- 
+      phenesse::weib_percentile_ci(vals, iterations = iter, percentile = 0.99, 
+                                   bootstraps = bs, conf = 0.9)
+  }
   
   results <- dplyr::bind_rows(
     data.frame(event = 'initiation', dplyr::bind_rows(initiation, .id = "ClusterID")), 
     data.frame(event = 'cessation', dplyr::bind_rows(cessation, .id = "ClusterID"))
   )
-  no_obs <- data.frame(
-    ClusterID = names(grps),
-    observations = sapply(X = grps, FUN = length) 
-  )
+  
+  if(length(unique(x$ClusterID)) > 1){
+    no_obs <- data.frame(
+      ClusterID = names(grps),
+      observations = sapply(X = grps, FUN = length) 
+    )} else {
+    no_obs <- data.frame(
+      ClusterID = 1, 
+      observations = length(vals)
+    )
+  }
+  
   results <- merge(results, no_obs, by = 'ClusterID')
   
   return(results)
 }
 
-
 #' grab day of years before and after phenophase
 #' @param x the output of initiation_cessation
 #' @param event either 'initiation' or 'cessation'
-doy_gen <- function(x, event){
-  
-  if(event == 'cessation'){
-    ci_event <- round(x[x$event == event, 'high_ci'])
+doy_gen <- function(x, eventA){
+
+  if(eventA == 'cessation'){
+    ci_event <- as.numeric(round(x[x$event == eventA, 'high_ci']))
     doys <- seq.int(ci_event + 28, ci_event+7)
   } else {
-    ci_event <- round(x[x$event == event, 'low_ci'])
+    eventA <- 'initiation'
+    ci_event <- as.numeric(round(x[x$event == eventA, 'low_ci']))
     doys <- seq.int(ci_event - 28, ci_event-7)
   } 
   
   doys <- sample(doys, 
-                 size = x[x$event == event, 'observations'],  replace = TRUE)
+                 size = as.numeric(x[x$event == eventA, 'observations']),  replace = TRUE)
   
-  return(sort(doys))
+  if(eventA == 'cessation'){
+    return(sort(doys, decreasing = TRUE))} else {
+      return(sort(doys, decreasing = TRUE))}
   
 }
+
+sort(180:190, decreasing = F)
 
 
 #' create an interpolated surface with a linear covariate

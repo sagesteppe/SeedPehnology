@@ -261,11 +261,8 @@ st_write(specimens, '../data/processed/training/presences.shp', quiet = TRUE)
 rm(scored)
 ```
 
-
 Now create flowering 'absences' for these species. We will start with species which were not flagged
 via our bimodal detection. 
-
-
 
 ```{r}
 
@@ -290,37 +287,57 @@ ince_writer <- function(x){
   nf <- x[ st_nearest_feature(x), ]
   recs2clust <- x[ as.numeric( st_distance(x, nf, by_element = T) ) < 80000 , ] 
   clusts <- geoClust_wrap(recs2clust, 'PC1') # identify clusters here.
-  
+
   ince <- initiation_cessation(clusts, n_cores = no_cores, iter = 250)
   taxon <- gsub(' ', '_', sf::st_drop_geometry(x$scntfcnm[1]))
   write.csv(ince, paste0(
     '../results/initation_cessation_tables/', taxon, '.csv'), row.names = F)
   
-  message(taxon, ' complete' , Sys.time(), ' cooling down for 60 seconds before starting next species')
+  message(taxon, ' complete ' , Sys.time(), ' cooling down for 60 seconds before starting next species')
   Sys.sleep(60) # let the computer cool down for 60 seconds before re-engaging.
 }
 
-splicies <- Filter(function(x) nrow(x) < 51, splicies)
-# splicies <- Filter(function(x) nrow(x) <= 300, splicies)
-obs <- lapply(splicies[1], ince_writer)  # 54 gets a try catch error.  68 merge fails. # 71 runs forever
+splicies <- Filter(function(x) nrow(x) > 300, splicies)
+names(splicies)
 
-
-tibble(obd1)
-
-
-# fewer than 50 records may mean no model via phenesse
-
-ll <- pheno_abs(clusts, ince)
-
-ggplot(ll) +
-  geom_segment(aes(x = cessAbs, xend = initAbs,
-                   y = PC1, yend = PC1)) +
-  geom_point(aes(x = initAbs, y = PC1), size = 2, color = 'green') +
-  geom_point(aes(x = cessAbs, y = PC1), size = 2, color = 'red') + 
-  geom_point(aes(x = doy, y = PC1, color = ClusterID), size = 3) 
-
+lapply(splicies[20], ince_writer) 
 ```
 
+
+Generate Phenology absences for start and ends of GAM curve for records. 
+
+```{r}
+
+p <- '../results/initation_cessation_tables'
+tables <- lapply(file.path(p, list.files(path = p)), read.csv)
+names(tables) <- gsub('.csv', '', list.files(p))
+tables <- data.table::rbindlist(tables, idcol = 'scntfcnm')
+
+
+specimens <- st_read('../data/processed/training/presences.shp', quiet = TRUE ) %>% 
+  filter(scntfcnm %in% gsub('_', ' ', names(tables)))
+pca1 <- terra::rast('../results/spatial/gddPCA.tif')
+specimens <- terra::extract(terra::rast('../results/spatial/gddPCA.tif'), specimens, bind = TRUE) |>
+  st_as_sf() %>% 
+  drop_na(PC1)
+
+specimens <- split(specimens, f = specimens$scntfcnm)
+
+pheno_abs_writer <- function(x){
+  
+  nf <- x[ st_nearest_feature(x), ]
+  recs2clust <- x[ as.numeric( st_distance(x, nf, by_element = T) ) < 80000 , ] 
+  clusts <- geoClust_wrap(recs2clust, 'PC1') # identify clusters here.
+  
+  est <- dplyr::filter(tables, scntfcnm == gsub(' ', '_', sf::st_drop_geometry(x$scntfcnm[1])))
+  out <- pheno_abs(clusts, est)
+  
+}
+
+out <- lapply(specimens, pheno_abs_writer)
+
+
+```
 
 
 
