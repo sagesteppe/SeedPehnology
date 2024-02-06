@@ -214,9 +214,6 @@ doy_gen <- function(x, eventA){
   
 }
 
-sort(180:190, decreasing = F)
-
-
 #' create an interpolated surface with a linear covariate
 #' ?interpolate in terra for examples
 pfun <- function(model, x, ...) {
@@ -260,35 +257,35 @@ pheno_abs <- function(x, estimates){
   # subset the raster surface to only cover the points which could benefit
   # from interpolated values. 
   
-  tdat_hull <- vect(
-    sf::st_convex_hull(
-      sf::st_transform(
-        sf::st_buffer(
-          sf::st_transform(
-            sf::st_union(
-              out[nearestClusterMismatch,]), 
-            5070), 
-          750),
-        crs(pca1))))
+  if(length(nearestClusterMismatch) > 0){
+    tdat_hull <- vect(
+      sf::st_convex_hull(
+        sf::st_transform(
+          sf::st_buffer(
+            sf::st_transform(
+              sf::st_union(
+                out[nearestClusterMismatch,]), 
+              5070), 
+            750),
+          crs(pca1))))
   
-  surface <- terra::crop(pca1, tdat_hull, mask = TRUE)
-  early_mod <- fields::Tps(st_coordinates(tdat), tdat$initAbs, Z = tdat$PC1)
-  late_mod <- fields::Tps(st_coordinates(tdat), tdat$cessAbs, Z = tdat$PC1)
+    surface <- terra::crop(pca1, tdat_hull, mask = TRUE)
+    early_mod <- fields::Tps(st_coordinates(tdat), tdat$initAbs, Z = tdat$PC1)
+    late_mod <- fields::Tps(st_coordinates(tdat), tdat$cessAbs, Z = tdat$PC1)
   
-  early_surf <- terra::interpolate(surface, early_mod, fun=pfun)
-  late_surf <- terra::interpolate(surface, late_mod, fun=pfun)
-  names(early_surf) <- 'initAbs'
-  names(late_surf) <- 'cessAbs'
+    early_surf <- terra::interpolate(surface, early_mod, fun=pfun)
+    late_surf <- terra::interpolate(surface, late_mod, fun=pfun)
+    names(early_surf) <- 'initAbs'; names(late_surf) <- 'cessAbs'
   
-  mismatch <- out[nearestClusterMismatch, !names(out) %in% c("initAbs", "cessAbs")]
-  ef <- terra::extract(early_surf, mismatch, bind = TRUE)
-  lf <- terra::extract(late_surf, ef, bind = TRUE) |>
-    sf::st_as_sf() |>
-    dplyr::mutate(across(initAbs:cessAbs, round))
+    mismatch <- out[nearestClusterMismatch, !names(out) %in% c("initAbs", "cessAbs")]
+    ef <- terra::extract(early_surf, mismatch, bind = TRUE)
+    lf <- terra::extract(late_surf, ef, bind = TRUE) |>
+      sf::st_as_sf() |>
+      dplyr::mutate(across(initAbs:cessAbs, round))
   
-  out <- dplyr::bind_rows(out, lf)
+    out <- dplyr::bind_rows(out, lf)
+  } 
   return(out)
-  
 }
 
 
@@ -351,24 +348,27 @@ modeller <- function(x){
                             verbose = FALSE, rerank = TRUE, 
                             allowParallel = TRUE, seeds = NA)
   
-  inde <- as.matrix(sf::st_drop_geometry(x[,8:26]))
-  de <- sf::st_drop_geometry(x$Pct_Anthesis)
+  col_range <- (grep('flowering', colnames(x)) + 1):(grep('geometry',  colnames(x)) - 3)
+  inde <- as.matrix(sf::st_drop_geometry(x[,col_range]))
+  de <- sf::st_drop_geometry(x$flowering)
   
   cl <- parallel::makeCluster(parallel::detectCores(), type='PSOCK')
   doParallel::registerDoParallel(cl)
   lmProfile <- caret::rfe(
-    as.matrix(sf::st_drop_geometry(x[,8:26])), # independent variables
-    sf::st_drop_geometry(x$Pct_Anthesis), # dependent variables
+    as.matrix(sf::st_drop_geometry(x[,col_range])), # independent variables
+    sf::st_drop_geometry(x$flowering), # dependent variables
     sizes  = c(3, seq.int(from = 4, to = 10, by = 2)),
     rank = TRUE, 
     rfeControl = ctrl)
   ParallelLogger::stopCluster(cl)
   rm(cl)
+  message('feature selection complete')
   
   terms <- gsub('doy', '', lmProfile[['optVariables']])
+  if(length(terms) > 3){terms <- terms[1:3]}
   formula <- as.formula(
     paste(
-      "Pct_Anthesis ~ ",  "s(doy, bs = 'cc') + ", # doy, is fixed, and has a smooth for cyclic data, bs = 'cc')
+      "flowering ~ ",  "s(doy, bs = 'cc') + ", # doy, is fixed, and has a smooth for cyclic data, bs = 'cc')
       paste0("s(", terms, ", bs = 'tp')", collapse = " + ")
     )
   )
@@ -611,3 +611,37 @@ speidR <- function(x, template, pout){
                   filename = file.path(pout, paste0(lyr_name, '.nc')), 
                   varname = lyr_name) 
 }
+
+
+
+ince_writer <- function(x){
+  
+  nf <- x[ st_nearest_feature(x), ]
+  recs2clust <- x[ as.numeric( st_distance(x, nf, by_element = T) ) < 80000 , ] 
+  clusts <- geoClust_wrap(recs2clust, 'PC1') # identify clusters here.
+  
+  ince <- initiation_cessation(clusts, n_cores = no_cores, iter = 250)
+  taxon <- gsub(' ', '_', sf::st_drop_geometry(x$scntfcnm[1]))
+  write.csv(ince, paste0(
+    '../results/initation_cessation_tables/', taxon, '.csv'), row.names = F)
+  
+  message(taxon, ' complete ' , Sys.time(), ' cooling down for 60 seconds before starting next species')
+  Sys.sleep(60) # let the computer cool down for 60 seconds before re-engaging.
+}
+
+#' generate phenology absences
+
+pheno_abs_writer <- function(x){
+  
+  nf <- x[ st_nearest_feature(x), ]
+  recs2clust <- x[ as.numeric( st_distance(x, nf, by_element = T) ) < 80000 , ] 
+  clusts <- geoClust_wrap(recs2clust, 'PC1') # identify clusters here.
+  
+  r_taxon <- gsub(' ', '_', sf::st_drop_geometry(x$scntfcnm[1]))
+  est <- dplyr::filter(tables, scntfcnm == r_taxon)
+  out <- pheno_abs(clusts, est) |>
+    dplyr::select(scntfcnm, accessr, doy, initAbs, cessAbs)
+  
+  sf::st_write(out, paste0('../results/PresAbs/', r_taxon, '.shp'), quiet = TRUE)
+}
+
