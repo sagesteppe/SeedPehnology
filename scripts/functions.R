@@ -311,19 +311,20 @@ conv_ob <- function(x){
 # match and run the top model. 
 f_modeller <- function(model, type = c("mod.aspatial", "mod.corExp", "mod.corGaus",
                                    'mod.corSpher', 'mod.corRatio', 'mod.corLin'), data){
+  
   type <- match.arg(type)
   switch(
     type,
-    mod.aspatial = mgcv::gamm(formula, data = data, method = 'ML', family = 'binomial'),
-    mod.corExp = mgcv::gamm(formula, data = data, method = 'ML', family = 'binomial',
+    mod.aspatial = mgcv::gamm(formula, data, method = 'ML', family = 'binomial'),
+    mod.corExp = mgcv::gamm(formula, data, method = 'ML', family = 'binomial',
                             correlation = nlme::corExp(form = cor_form, nugget=T)),
-    mod.corGaus = mgcv::gamm(formula, data = data, method = 'ML', family = 'binomial',
-                             correlation = nlme::corGaus(form = cor_form, nugget=)), 
-    mod.corSpher = mgcv::gamm(formula, data = data, method = 'ML', family = 'binomial',
+    mod.corGaus = mgcv::gamm(formula, data, method = 'ML', family = 'binomial',
+                             correlation = nlme::corGaus(form = cor_form, nugget=T)), 
+    mod.corSpher = mgcv::gamm(formula, data, method = 'ML', family = 'binomial',
                               correlation = nlme::corSpher(form = cor_form, nugget=T)), 
-    mod.corRatio = mgcv::gamm(formula, data = data, method = 'ML', family = 'binomial',
+    mod.corRatio = mgcv::gamm(formula, data, method = 'ML', family = 'binomial',
                               correlation = nlme::corRatio(form = cor_form, nugget=T)),
-    mod.corLin = mgcv::gamm(formula, data = data, method = 'ML', family = 'binomial',
+    mod.corLin = mgcv::gamm(formula, data, method = 'ML', family = 'binomial',
                             correlation = nlme::corLin(form = cor_form, nugget=T))
   )
 }
@@ -334,12 +335,12 @@ modeller <- function(x){
   x <- x |>
     st_transform(5070) %>% 
     mutate(
-      Latitude = sf::st_coordinates(.)[,2], 
-      Longitude = sf::st_coordinates(.)[,1],
+      Latitude = jitter(sf::st_coordinates(.)[,2]), 
+      Longitude = jitter(sf::st_coordinates(.)[,1]),
       .before = 'geometry') |>
     st_transform(4326)
   
-  taxon <- sf::st_drop_geometry(x$scientificname)[1]
+  taxon <- sf::st_drop_geometry(x$scntfcnm)[1]
   
   # we will determine which features have utility in predicting whether a 
   # population has individuals in a phenophase. 
@@ -362,9 +363,8 @@ modeller <- function(x){
     rfeControl = ctrl)
   ParallelLogger::stopCluster(cl)
   rm(cl)
-  message('feature selection complete')
   
-  terms <- gsub('doy', '', lmProfile[['optVariables']])
+  terms <- lmProfile[['optVariables']][grep('doy', lmProfile[['optVariables']], invert = TRUE)]
   if(length(terms) > 3){terms <- terms[1:3]}
   formula <- as.formula(
     paste(
@@ -377,6 +377,7 @@ modeller <- function(x){
   urGamm <- MuMIn::uGamm ; formals(urGamm)$na.action <- 'na.omit' 
   formals(urGamm)$family <- 'binomial'; formals(urGamm)$method <- 'REML'
   
+  message('feature selection complete, fitting model ', formula, ' with spatial-autocorrelation')
   mod.aspatial <- conv_ob(myTryCatch(urGamm(formula, data = x)))
   mod.corExp <- conv_ob(myTryCatch(urGamm(
     formula, data = x, correlation = nlme::corExp(form = cor_form, nugget=T))))

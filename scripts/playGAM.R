@@ -9,8 +9,7 @@ source('functions.R')
 acle <- st_read('../results/PresAbs/Achnatherum_lemmonii.shp', quiet = TRUE) |>
   select(-accessr) %>% 
   pivot_longer(cols = doy:cessAbs, values_to = 'doy', names_to = 'flowering') |>
-  mutate(flowering = as.factor(if_else(flowering == 'doy', 1, 0)))
-
+  mutate(flowering = if_else(flowering == 'doy', 1, 0)) # don't convert to factor
 
 # now we can import variables which we believe correlate with flowering. 
 p <- '../data/spatial/processed/'
@@ -23,44 +22,20 @@ acle <- terra::extract(preds, acle, bind = TRUE) |>
     across(
       doy:cti, ~ ifelse(is.na(.x), mean(.x, na.rm = TRUE), .x)))
 
-acle1 <- acle[, 1:5]
-ob <- modeller(acle)
+modeller(acle)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+acle_model <- readRDS('../results/models/Achnatherum_lemmonii.rds')
 # play with prediction
 
-pred_df <- expand.grid(doy = seq(min(achy$doy), max(achy$doy)), 
-                       bulk_density = seq(min(achy$bulk_density), max(achy$bulk_density), by = 1))
+pred_df <- expand.grid(doy = seq(min(acle$doy), max(acle$doy)), 
+                       vpd_mean = seq(min(acle$vpd_mean), max(acle$vpd_mean), by = 1), 
+                       gdgfgd5 = seq(min(acle$gdgfgd5), max(acle$gdgfgd5), by = 1))
 
 pred_df <- expand.grid(doy = seq(50, 200), 
                        bulk_density = mean(achy$bulk_density)) # toy around to see results
 
-pred <- predict(mod.aspatial, pred_df, type = 'response', se = TRUE)
+pred <- predict(acle_model, pred_df, type = 'response', se = TRUE)
 
+plot(pred)
 # https://stacyderuiter.github.io/s245-notes-bookdown/gams-generalized-additive-models.html
 # notes on GAMS!!
