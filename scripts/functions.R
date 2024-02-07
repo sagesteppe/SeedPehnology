@@ -309,25 +309,26 @@ conv_ob <- function(x){
 }
 
 # match and run the top model. 
-f_modeller <- function(model, type = c("mod.aspatial", "mod.corExp", "mod.corGaus",
+f_modeller <- function(model, m_form, type = c("mod.aspatial", "mod.corExp", "mod.corGaus",
                                    'mod.corSpher', 'mod.corRatio', 'mod.corLin'), data){
   
   type <- match.arg(type)
   switch(
     type,
-    mod.aspatial = mgcv::gamm(formula, data, method = 'ML', family = 'binomial'),
-    mod.corExp = mgcv::gamm(formula, data, method = 'ML', family = 'binomial',
+    mod.aspatial = mgcv::gam(m_form, data, method = 'ML', family = 'binomial'),
+    mod.corExp = mgcv::gamm(m_form, data, method = 'ML', family = 'binomial',
                             correlation = nlme::corExp(form = cor_form, nugget=T)),
-    mod.corGaus = mgcv::gamm(formula, data, method = 'ML', family = 'binomial',
+    mod.corGaus = mgcv::gamm(m_form, data, method = 'ML', family = 'binomial',
                              correlation = nlme::corGaus(form = cor_form, nugget=T)), 
-    mod.corSpher = mgcv::gamm(formula, data, method = 'ML', family = 'binomial',
+    mod.corSpher = mgcv::gamm(m_form, data, method = 'ML', family = 'binomial',
                               correlation = nlme::corSpher(form = cor_form, nugget=T)), 
-    mod.corRatio = mgcv::gamm(formula, data, method = 'ML', family = 'binomial',
+    mod.corRatio = mgcv::gamm(m_form, data, method = 'ML', family = 'binomial',
                               correlation = nlme::corRatio(form = cor_form, nugget=T)),
-    mod.corLin = mgcv::gamm(formula, data, method = 'ML', family = 'binomial',
+    mod.corLin = mgcv::gamm(m_form, data, method = 'ML', family = 'binomial',
                             correlation = nlme::corLin(form = cor_form, nugget=T))
   )
 }
+
 
 #' fit some gams. 
 modeller <- function(x){
@@ -335,8 +336,8 @@ modeller <- function(x){
   x <- x |>
     st_transform(5070) %>% 
     mutate(
-      Latitude = jitter(sf::st_coordinates(.)[,2]), 
-      Longitude = jitter(sf::st_coordinates(.)[,1]),
+      Latitude = jitter(sf::st_coordinates(.)[,2])/1000, 
+      Longitude = jitter(sf::st_coordinates(.)[,1])/1000,
       .before = 'geometry') |>
     st_transform(4326)
   
@@ -361,14 +362,14 @@ modeller <- function(x){
     sizes  = c(3, seq.int(from = 4, to = 10, by = 2)),
     rank = TRUE, 
     rfeControl = ctrl)
-  ParallelLogger::stopCluster(cl)
+  invisible(ParallelLogger::stopCluster(cl))
   rm(cl)
   
   terms <- lmProfile[['optVariables']][grep('doy', lmProfile[['optVariables']], invert = TRUE)]
-  if(length(terms) > 3){terms <- terms[1:3]}
-  formula <- as.formula(
+  if(length(terms) > 2){terms <- terms[1:2]}
+  m_form <- as.formula(
     paste(
-      "flowering ~ ",  "s(doy, bs = 'cc') + ", # doy, is fixed, and has a smooth for cyclic data, bs = 'cc')
+      "flowering ~ ",  "s(doy, bs = 'cc', k = 25) + ", # doy, is fixed, and has a smooth for cyclic data, bs = 'cc')
       paste0("s(", terms, ", bs = 'tp')", collapse = " + ")
     )
   )
@@ -377,18 +378,18 @@ modeller <- function(x){
   urGamm <- MuMIn::uGamm ; formals(urGamm)$na.action <- 'na.omit' 
   formals(urGamm)$family <- 'binomial'; formals(urGamm)$method <- 'REML'
   
-  message('feature selection complete, fitting model ', formula, ' with spatial-autocorrelation')
-  mod.aspatial <- conv_ob(myTryCatch(urGamm(formula, data = x)))
+  message('feature selection complete, fitting model ', m_form, ' with spatial-autocorrelation')
+  mod.aspatial <- conv_ob(myTryCatch(urGamm(m_form, data = x)))
   mod.corExp <- conv_ob(myTryCatch(urGamm(
-    formula, data = x, correlation = nlme::corExp(form = cor_form, nugget=T))))
+    m_form, data = x, correlation = nlme::corExp(form = cor_form, nugget=T))))
   mod.corGaus <- conv_ob(myTryCatch(urGamm(
-    formula, data = x, correlation = nlme::corGaus(form = cor_form, nugget=T))))
+    m_form, data = x, correlation = nlme::corGaus(form = cor_form, nugget=T))))
   mod.corSpher <- conv_ob(myTryCatch(urGamm(
-    formula, data = x, correlation = nlme::corSpher(form = cor_form, nugget=T))))
+    m_form, data = x, correlation = nlme::corSpher(form = cor_form, nugget=T))))
   mod.corRatio <- conv_ob(myTryCatch(urGamm(
-    formula, data = x, correlation = nlme::corRatio(form = cor_form, nugget=T))))
+    m_form, data = x, correlation = nlme::corRatio(form = cor_form, nugget=T))))
   mod.corLin <- conv_ob(myTryCatch(urGamm(
-    formula, data = x, correlation = nlme::corLin(form = cor_form, nugget=T))))
+    m_form, data = x, correlation = nlme::corLin(form = cor_form, nugget=T))))
   
   tf <- unlist(lapply(X = mget(ls(pattern = 'mod[.]')), FUN = is.null))
   rm(list = c(names(tf)[which(tf == TRUE)]))
@@ -396,7 +397,7 @@ modeller <- function(x){
   # select and refit the top model with method 'ML'
   msel_tab <- MuMIn::model.sel(mget(ls(pattern = 'mod[.]')))
   top_mod <- row.names(msel_tab[1,])
-  mod.final <- f_modeller(model = top_mod, data = x)
+  mod.final <- f_modeller(model = top_mod, m_form = m_form, data = x)
   
   # write out results to local #
   msel_tab <- data.frame(msel_tab) |>
