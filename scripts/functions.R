@@ -310,12 +310,18 @@ conv_ob <- function(x){
 
 # match and run the top model. 
 f_modeller <- function(model, m_form, type = c("mod.aspatial", "mod.corExp", "mod.corGaus",
-                                   'mod.corSpher', 'mod.corRatio', 'mod.corLin'), data){
+                                   'mod.corSpher', 'mod.corRatio', 'mod.corLin', 
+                                   'mod.corSmoothed'), data){
   
   type <- match.arg(type)
   switch(
     type,
-    mod.aspatial = mgcv::gam(m_form, data, method = 'ML', family = 'binomial'),
+    mod.aspatial = mgcv::gam(m_form, data, method = 'ML',
+                             family = 'binomial', select = TRUE),
+    mod.corSmoothed = mgcv::gam(as.formula(paste(
+      "flowering ~ ",  "s(doy, bs = 'cc', k = 25) + ", # smooth for cyclic data
+          paste0(terms, collapse = " + "), " + s(Latitude, Longitude, bs = 'sos')")),
+      data, method = 'ML', family = 'binomial', select = TRUE),
     mod.corExp = mgcv::gamm(m_form, data, method = 'ML', family = 'binomial',
                             correlation = nlme::corExp(form = cor_form, nugget=T)),
     mod.corGaus = mgcv::gamm(m_form, data, method = 'ML', family = 'binomial',
@@ -330,15 +336,15 @@ f_modeller <- function(model, m_form, type = c("mod.aspatial", "mod.corExp", "mo
 }
 
 
+
 #' fit some gams. 
 modeller <- function(x){
   
-  x <- x |>
-    st_transform(5070) %>% 
-    mutate(
-      Latitude = jitter(sf::st_coordinates(.)[,2])/1000, 
-      Longitude = jitter(sf::st_coordinates(.)[,1])/1000,
-      .before = 'geometry') |>
+  x <- st_transform(x, 5070)
+  x <- dplyr::mutate(x, 
+        Latitude = jitter(sf::st_coordinates(x)[,2])/1000, 
+        Longitude = jitter(sf::st_coordinates(x)[,1])/1000,
+        .before = 'geometry') |>
     st_transform(4326)
   
   taxon <- sf::st_drop_geometry(x$scntfcnm)[1]
@@ -359,45 +365,37 @@ modeller <- function(x){
   lmProfile <- caret::rfe(
     as.matrix(sf::st_drop_geometry(x[,col_range])), # independent variables
     sf::st_drop_geometry(x$flowering), # dependent variables
-    sizes  = c(3, seq.int(from = 4, to = 10, by = 2)),
+    sizes  = c(2:5),
     rank = TRUE, 
     rfeControl = ctrl)
   invisible(ParallelLogger::stopCluster(cl))
   rm(cl)
   
   terms <- lmProfile[['optVariables']][grep('doy', lmProfile[['optVariables']], invert = TRUE)]
-  if(length(terms) > 2){terms <- terms[1:2]}
+  if( sum(grepl('gddlgd', terms)) > 1) {
+    pos <- grep('gddlgd', terms)
+    pos <- pos[2:length(pos)]
+    terms <- terms[-pos]
+  }
+  if(length(terms) > 3){terms <- terms[1:3]}
   m_form <- as.formula(
-    paste(
-      "flowering ~ ",  "s(doy, bs = 'cc', k = 25) + ", # doy, is fixed, and has a smooth for cyclic data, bs = 'cc')
-      paste0("s(", terms, ", bs = 'tp')", collapse = " + ")
-    )
+      paste(
+        "flowering ~ ",  "s(doy, bs = 'cc', k = 25) + ", # smooth for cyclic data
+        paste0(terms, collapse = " + ")
+      )
   )
-  cor_form <- as.formula("~ Latitude + Longitude")
-  
-  urGamm <- MuMIn::uGamm ; formals(urGamm)$na.action <- 'na.omit' 
-  formals(urGamm)$family <- 'binomial'; formals(urGamm)$method <- 'REML'
-  
+
   message('feature selection complete, fitting model ', m_form, ' with spatial-autocorrelation')
-  mod.aspatial <- conv_ob(myTryCatch(urGamm(m_form, data = x)))
-  mod.corExp <- conv_ob(myTryCatch(urGamm(
-    m_form, data = x, correlation = nlme::corExp(form = cor_form, nugget=T))))
-  mod.corGaus <- conv_ob(myTryCatch(urGamm(
-    m_form, data = x, correlation = nlme::corGaus(form = cor_form, nugget=T))))
-  mod.corSpher <- conv_ob(myTryCatch(urGamm(
-    m_form, data = x, correlation = nlme::corSpher(form = cor_form, nugget=T))))
-  mod.corRatio <- conv_ob(myTryCatch(urGamm(
-    m_form, data = x, correlation = nlme::corRatio(form = cor_form, nugget=T))))
-  mod.corLin <- conv_ob(myTryCatch(urGamm(
-    m_form, data = x, correlation = nlme::corLin(form = cor_form, nugget=T))))
-  
-  tf <- unlist(lapply(X = mget(ls(pattern = 'mod[.]')), FUN = is.null))
-  rm(list = c(names(tf)[which(tf == TRUE)]))
-  
-  # select and refit the top model with method 'ML'
-  msel_tab <- MuMIn::model.sel(mget(ls(pattern = 'mod[.]')))
-  top_mod <- row.names(msel_tab[1,])
-  mod.final <- f_modeller(model = top_mod, m_form = m_form, data = x)
+  mm <- mods(x = x, m_form)
+  msel_tab <- mm[[1]] ;  mod.final <- mm[[2]] 
+
+ #  determine whether all terms were needed. - if not remove them. 
+  new_form <- new_form_fn(mod.final, terms, m_form)
+  if(m_form != new_form){
+    message("Refitting a final model", new_form, "without a covariate for better prediction")
+    mm <- mods(x = x, m_form = new_form); 
+    msel_tab <- mm[[1]] ;  mod.final <- mm[[2]] 
+    }
   
   # write out results to local #
   msel_tab <- data.frame(msel_tab) |>
@@ -413,10 +411,48 @@ modeller <- function(x){
   write.csv(msel_tab, row.names = FALSE,
             file.path('../results/selection_tables', paste0(gsub(' ', '_', taxon), '.csv')))
   
-  return(mod.final)
-  
 }
 
+#' fit gamms with different spatial terms. 
+mods <- function(x, m_form){
+  
+  cor_form <- as.formula("~ Latitude + Longitude")
+  urGamm <- MuMIn::uGamm ; formals(urGamm)$na.action <- 'na.omit' 
+  formals(urGamm)$family <- 'binomial'; formals(urGamm)$method <- 'REML'
+  
+  mod.aspatial <- conv_ob(myTryCatch(urGamm(m_form, data = x, family = 'binomial')))
+  if(morans_wrapper(x, mod.aspatial) == TRUE){
+  
+   mod.corExp <- conv_ob(myTryCatch(urGamm(
+      m_form, data = x, correlation = nlme::corExp(form = cor_form, nugget=T), family = 'binomial')))
+    mod.corGaus <- conv_ob(myTryCatch(urGamm(
+      m_form, data = x, correlation = nlme::corGaus(form = cor_form, nugget=T), family = 'binomial')))
+    mod.corSpher <- conv_ob(myTryCatch(urGamm(
+      m_form, data = x, correlation = nlme::corSpher(form = cor_form, nugget=T), family = 'binomial')))
+    mod.corRatio <- conv_ob(myTryCatch(urGamm(
+      m_form, data = x, correlation = nlme::corRatio(form = cor_form, nugget=T), family = 'binomial')))
+    mod.corLin <- conv_ob(myTryCatch(urGamm(
+      m_form, data = x, correlation = nlme::corLin(form = cor_form, nugget=T), family = 'binomial')))
+    mod.corSmoothed <- conv_ob(myTryCatch(urGamm(
+      as.formula(
+        paste(
+          "flowering ~ ",  "s(doy, bs = 'cc', k = 25) + ", # smooth for cyclic data
+          paste0(terms, collapse = " + "), " + s(Latitude, Longitude, bs = 'sos')"
+        )
+      ), data = x, family = 'binomial'))) 
+  }
+  
+  tf <- unlist(lapply(X = mget(ls(pattern = 'mod[.]')), FUN = is.null))
+  rm(list = c(names(tf)[which(tf == TRUE)]))
+
+  # select and refit the top model with method 'ML'
+  msel_tab <- MuMIn::model.sel(mget(ls(pattern = 'mod[.]')))
+  top_mod <- row.names(msel_tab[1,])
+  mod.final <- f_modeller(model = top_mod, m_form = m_form, data = x)
+  
+  return(list(msel_tab, mod.final))
+  
+}
 
 #' this function flags records which warrant visual review as they are at extreme 
 #' ends of the distributions
@@ -647,3 +683,42 @@ pheno_abs_writer <- function(x){
   sf::st_write(out, paste0('../results/PresAbs/', r_taxon, '.shp'), quiet = TRUE)
 }
 
+
+#' determine whether a covariate should be dropped from a final model 
+new_form_fn <- function(x, terms, m_form){
+  
+  terms2remove <- broom::tidy(x, parametric = TRUE) |>
+    dplyr::filter(p.value > 0.1 & term != '(Intercept)') |>  
+    dplyr::pull(term) # identify terms to remove.
+  
+  if(length(terms2remove)>0){
+    
+    terms_sub <- terms[- grep(paste(terms2remove, collapse = "|"), terms) ] 
+    if(length(terms_sub) > 0){
+      m_form <- as.formula(
+        paste(
+          "flowering ~ ",  "s(doy, bs = 'cc', k = 25) + ", # smooth for cyclic data
+          paste0(terms_sub, collapse = " + ")
+        )
+      )
+    } else {m_form <- as.formula("flowering ~ s(doy, bs = 'c', k = 25)")}
+    return(m_form)
+  } else {return(m_form)}
+}
+
+#' determine whether we should model spatial autocorrelation
+morans_wrapper <- function(x, model){
+  
+  mat <- x
+  mat[,c('Grp', 'x', 'y')] <- rep(1:(nrow(x)/3), each = 3)
+  simulationOutput <- DHARMa::simulateResiduals(model[[2]])
+#  simulationOutput1 <- DHARMa::recalculateResiduals(simulationOutput, group = mat$Grp)
+  matty <- dplyr::distinct(mat, Grp, .keep_all = T) |>
+    sf::st_drop_geometry()
+  
+#  morans <- DHARMa::testSpatialAutocorrelation(simulationOutput1, matty$x, matty$y)
+ # return(morans[["p.value"]] < 0.01) # if we reject the null hypothesis, that no spatial pattern exists, 
+  # than we will create the spatial models. 
+}
+
+rm(model)

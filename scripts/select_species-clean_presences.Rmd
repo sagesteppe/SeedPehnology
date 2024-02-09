@@ -285,7 +285,7 @@ no_cores <- parallel::detectCores()
 splicies <- Filter(function(x) nrow(x) > 300, splicies)
 names(splicies)
 
-lapply(splicies[20], ince_writer) 
+lapply(splicies, ince_writer) 
 ```
 
 
@@ -298,16 +298,18 @@ tables <- lapply(file.path(p, list.files(path = p)), read.csv)
 names(tables) <- gsub('.csv', '', list.files(p))
 tables <- data.table::rbindlist(tables, idcol = 'scntfcnm')
 
+# f <- gsub('.shp', '', list.files('../results/PresAbs', pattern = 'shp$'))
+# tables <- filter(tables, ! scntfcnm %in% f)
 
 specimens <- st_read('../data/processed/training/presences.shp', quiet = TRUE ) %>% 
-  filter(scntfcnm %in% gsub('_', ' ', names(tables)))
+  filter(scntfcnm %in% gsub('_', ' ', names(tables))) #%>% 
+  #filter(scntfcnm %in% gsub('_', ' ', unique(tables$scntfcnm)))
 pca1 <- terra::rast('../results/spatial/gddPCA.tif')
 specimens <- terra::extract(terra::rast('../results/spatial/gddPCA.tif'), specimens, bind = TRUE) |>
   st_as_sf() %>% 
   drop_na(PC1)
 
 specimens <- split(specimens, f = specimens$scntfcnm)
-
 lapply(specimens, pheno_abs_writer)
 ```
 
