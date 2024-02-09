@@ -310,18 +310,13 @@ conv_ob <- function(x){
 
 # match and run the top model. 
 f_modeller <- function(model, m_form, type = c("mod.aspatial", "mod.corExp", "mod.corGaus",
-                                   'mod.corSpher', 'mod.corRatio', 'mod.corLin', 
-                                   'mod.corSmoothed'), data){
+                                   'mod.corSpher', 'mod.corRatio', 'mod.corLin'), data){
   
   type <- match.arg(type)
   switch(
     type,
     mod.aspatial = mgcv::gam(m_form, data, method = 'ML',
                              family = 'binomial', select = TRUE),
-    mod.corSmoothed = mgcv::gam(as.formula(paste(
-      "flowering ~ ",  "s(doy, bs = 'cc', k = 25) + ", # smooth for cyclic data
-          paste0(terms, collapse = " + "), " + s(Latitude, Longitude, bs = 'sos')")),
-      data, method = 'ML', family = 'binomial', select = TRUE),
     mod.corExp = mgcv::gamm(m_form, data, method = 'ML', family = 'binomial',
                             correlation = nlme::corExp(form = cor_form, nugget=T)),
     mod.corGaus = mgcv::gamm(m_form, data, method = 'ML', family = 'binomial',
@@ -386,14 +381,16 @@ modeller <- function(x){
   )
 
   message('feature selection complete, fitting model ', m_form, ' with spatial-autocorrelation')
-  mm <- mods(x = x, m_form)
+  mm <- mods(x = x, m_form, round = 1)
   msel_tab <- mm[[1]] ;  mod.final <- mm[[2]] 
 
  #  determine whether all terms were needed. - if not remove them. 
+  
+  ## LET'S MAKE A SECOND FN HERE - USE THE SAME SAC STRUCTURE AS PRESENT IN THE LAST. 
   new_form <- new_form_fn(mod.final, terms, m_form)
   if(m_form != new_form){
-    message("Refitting a final model ", new_form, " without a covariate for better prediction")
-    mm <- mods(x = x, m_form = new_form); 
+    message("Refitting a final model ", new_form, " without a covariate(s) for better prediction")
+    mm <- mods(x = x, m_form = new_form, round = 2, top_mod = ); 
     msel_tab <- mm[[1]] ;  mod.final <- mm[[2]] 
     }
   
@@ -414,16 +411,16 @@ modeller <- function(x){
 }
 
 #' fit gamms with different spatial terms. 
-mods <- function(x, m_form){
+mods <- function(x, m_form, round){
   
   cor_form <- as.formula("~ Latitude + Longitude")
   urGamm <- MuMIn::uGamm ; formals(urGamm)$na.action <- 'na.omit' 
   formals(urGamm)$family <- 'binomial'; formals(urGamm)$method <- 'REML'
   
+  if(round == 1){
   mod.aspatial <- mgcv::gam(m_form, data = x, family = 'binomial')
   if(morans_wrapper(x, mod.aspatial) == TRUE){
-  
-   mod.aspatial <- conv_ob(myTryCatch(urGamm(m_form, data = x, family = 'binomial')))
+    rm(mod.aspatial)
    mod.corExp <- conv_ob(myTryCatch(urGamm(
       m_form, data = x, correlation = nlme::corExp(form = cor_form, nugget=T), family = 'binomial')))
     mod.corGaus <- conv_ob(myTryCatch(urGamm(
@@ -434,13 +431,6 @@ mods <- function(x, m_form){
       m_form, data = x, correlation = nlme::corRatio(form = cor_form, nugget=T), family = 'binomial')))
     mod.corLin <- conv_ob(myTryCatch(urGamm(
       m_form, data = x, correlation = nlme::corLin(form = cor_form, nugget=T), family = 'binomial')))
-    mod.corSmoothed <- conv_ob(myTryCatch(urGamm(
-      as.formula(
-        paste(
-          "flowering ~ ",  "s(doy, bs = 'cc', k = 25) + ", # smooth for cyclic data
-          paste0(terms, collapse = " + "), " + s(Latitude, Longitude, bs = 'sos')"
-        )
-      ), data = x, family = 'binomial'))) 
   }
   
   tf <- unlist(lapply(X = mget(ls(pattern = 'mod[.]')), FUN = is.null))
@@ -450,6 +440,7 @@ mods <- function(x, m_form){
   msel_tab <- MuMIn::model.sel(mget(ls(pattern = 'mod[.]')))
   top_mod <- row.names(msel_tab[1,])
   mod.final <- f_modeller(model = top_mod, m_form = m_form, data = x)
+  } else {mod.final <- f_modeller(model = rownames(data.frame(msel_tab))[1], m_form = new_form, data = x)}
   
   return(list(msel_tab, mod.final))
   

@@ -30,10 +30,7 @@ spp <- terra::extract(preds, spp, bind = TRUE) |>
 
 splicies <- split(spp, f = spp$scntfcnm)
 splicies <- Filter(function(y) nrow(y) >= 50, splicies)
-lapply(X = splicies[2], modeller) # 2:40 ~ 500 occurrences
-
-
-
+lapply(X = splicies[6], modeller) # 2:40 ~ 500 occurrences
 
 
 
