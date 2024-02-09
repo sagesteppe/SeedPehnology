@@ -30,85 +30,7 @@ spp <- terra::extract(preds, spp, bind = TRUE) |>
 
 splicies <- split(spp, f = spp$scntfcnm)
 splicies <- Filter(function(y) nrow(y) >= 50, splicies)
-lapply(X = splicies[3], modeller) # 2:40 ~ 500 occurrences
-
-
-
-ob <- splicies[[3]]
-
-
-
-
-x <- st_transform(ob, 5070)
-x <- dplyr::mutate(x, 
-                   Latitude = jitter(sf::st_coordinates(x)[,2])/1000, 
-                   Longitude = jitter(sf::st_coordinates(x)[,1])/1000,
-                   .before = 'geometry') |>
-  st_transform(4326)
-
-taxon <- sf::st_drop_geometry(x$scntfcnm)[1]
-
-# we will determine which features have utility in predicting whether a 
-# population has individuals in a phenophase. 
-ctrl <- caret::rfeControl(functions = caret::gamFuncs,
-                          method = "repeatedcv", number = 10,  repeats = 5,
-                          verbose = FALSE, rerank = TRUE, 
-                          allowParallel = TRUE, seeds = NA)
-
-col_range <- (grep('flowering', colnames(x)) + 1):(grep('geometry',  colnames(x)) - 3)
-inde <- as.matrix(sf::st_drop_geometry(x[,col_range]))
-de <- sf::st_drop_geometry(x$flowering)
-
-cl <- parallel::makeCluster(parallel::detectCores(), type='PSOCK')
-doParallel::registerDoParallel(cl)
-lmProfile <- caret::rfe(
-  as.matrix(sf::st_drop_geometry(x[,col_range])), # independent variables
-  sf::st_drop_geometry(x$flowering), # dependent variables
-  sizes  = c(2:5),
-  rank = TRUE, 
-  rfeControl = ctrl)
-invisible(ParallelLogger::stopCluster(cl))
-rm(cl)
-
-terms <- lmProfile[['optVariables']][grep('doy', lmProfile[['optVariables']], invert = TRUE)]
-if( sum(grepl('gddlgd', terms)) > 1) {
-  pos <- grep('gddlgd', terms)
-  pos <- pos[2:length(pos)]
-  terms <- terms[-pos]
-}
-if(length(terms) > 3){terms <- terms[1:3]}
-m_form <- as.formula(
-  paste(
-    "flowering ~ ",  "s(doy, bs = 'cc', k = 25) + ", # smooth for cyclic data
-    paste0(terms, collapse = " + ")
-  )
-)
-
-message('feature selection complete, fitting model ', m_form, ' with spatial-autocorrelation')
-
-urGamm <- MuMIn::uGamm ; formals(urGamm)$na.action <- 'na.omit' 
-formals(urGamm)$family <- 'binomial'; formals(urGamm)$method <- 'REML'
-
-mod.aspatial <- conv_ob(myTryCatch(urGamm(m_form, data = x, family = 'binomial')))
-morans_wrapper(x, mod.aspatial)
-
-msel_tab <- mm[[1]] ;  mod.final <- mm[[2]] 
-
-
-
-mat <- x
-mat[,c('Grp', 'x', 'y')] <- rep(1:(nrow(x)/3), each = 3)
-simulationOutput <- DHARMa::simulateResiduals(mod.aspatial$lme)
-simulationOutput1 <- DHARMa::recalculateResiduals(simulationOutput, group = mat$Grp)
-matty <- dplyr::distinct(mat, Grp, .keep_all = T) |>
-  sf::st_drop_geometry()
-
-morans <- DHARMa::testSpatialAutocorrelation(simulationOutput1, matty$x, matty$y)
-return(morans[["p.value"]] < 0.01)
-
-
-
-
+lapply(X = splicies[2], modeller) # 2:40 ~ 500 occurrences
 
 
 
@@ -145,7 +67,9 @@ return(morans[["p.value"]] < 0.01)
 f <- paste0('../results/models/', list.files('../results/models/'))
 model <- readRDS(f[2])
 
-
+gam.check(model)
+summary(model)
+plot(model)
 mat <- splicies[[3]] |> st_transform(5070)
 
 

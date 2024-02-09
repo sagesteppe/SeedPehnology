@@ -392,7 +392,7 @@ modeller <- function(x){
  #  determine whether all terms were needed. - if not remove them. 
   new_form <- new_form_fn(mod.final, terms, m_form)
   if(m_form != new_form){
-    message("Refitting a final model", new_form, "without a covariate for better prediction")
+    message("Refitting a final model ", new_form, " without a covariate for better prediction")
     mm <- mods(x = x, m_form = new_form); 
     msel_tab <- mm[[1]] ;  mod.final <- mm[[2]] 
     }
@@ -420,9 +420,10 @@ mods <- function(x, m_form){
   urGamm <- MuMIn::uGamm ; formals(urGamm)$na.action <- 'na.omit' 
   formals(urGamm)$family <- 'binomial'; formals(urGamm)$method <- 'REML'
   
-  mod.aspatial <- conv_ob(myTryCatch(urGamm(m_form, data = x, family = 'binomial')))
+  mod.aspatial <- mgcv::gam(m_form, data = x, family = 'binomial')
   if(morans_wrapper(x, mod.aspatial) == TRUE){
   
+   mod.aspatial <- conv_ob(myTryCatch(urGamm(m_form, data = x, family = 'binomial')))
    mod.corExp <- conv_ob(myTryCatch(urGamm(
       m_form, data = x, correlation = nlme::corExp(form = cor_form, nugget=T), family = 'binomial')))
     mod.corGaus <- conv_ob(myTryCatch(urGamm(
@@ -701,7 +702,7 @@ new_form_fn <- function(x, terms, m_form){
           paste0(terms_sub, collapse = " + ")
         )
       )
-    } else {m_form <- as.formula("flowering ~ s(doy, bs = 'c', k = 25)")}
+    } else {m_form <- as.formula("flowering ~ s(doy, bs = 'cc', k = 25)")}
     return(m_form)
   } else {return(m_form)}
 }
@@ -711,14 +712,15 @@ morans_wrapper <- function(x, model){
   
   mat <- x
   mat[,c('Grp', 'x', 'y')] <- rep(1:(nrow(x)/3), each = 3)
-  simulationOutput <- DHARMa::simulateResiduals(model[[2]])
-#  simulationOutput1 <- DHARMa::recalculateResiduals(simulationOutput, group = mat$Grp)
+  simulationOutput <- DHARMa::simulateResiduals(model)
+  simulationOutput1 <- DHARMa::recalculateResiduals(simulationOutput, group = mat$Grp)
   matty <- dplyr::distinct(mat, Grp, .keep_all = T) |>
     sf::st_drop_geometry()
   
-#  morans <- DHARMa::testSpatialAutocorrelation(simulationOutput1, matty$x, matty$y)
- # return(morans[["p.value"]] < 0.01) # if we reject the null hypothesis, that no spatial pattern exists, 
+  morans <- DHARMa::testSpatialAutocorrelation(
+    simulationOutput1, matty$x, matty$y, plot = FALSE)
+  return(morans[["p.value"]] < 0.01) # if we reject the null hypothesis, that no spatial pattern exists, 
   # than we will create the spatial models. 
 }
 
-rm(model)
+?testSpatialAutocorrelation
