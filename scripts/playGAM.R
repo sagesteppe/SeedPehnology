@@ -1,6 +1,7 @@
 library(sf)
 library(tidyverse)
 library(terra)
+library(mgcv)
 
 setwd('~/Documents/SeedPhenology/scripts')
 source('functions.R')
@@ -27,42 +28,12 @@ spp <- terra::extract(preds, spp, bind = TRUE) |>
     across( 
       doy:cti, ~ ifelse(is.na(.x), mean(.x, na.rm = TRUE), .x))) 
 
-
 splicies <- split(spp, f = spp$scntfcnm)
 splicies <- Filter(function(y) nrow(y) >= 50, splicies)
-lapply(X = splicies[6], modeller) # 2:40 ~ 500 occurrences
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+lapply(X = splicies[40:50], modeller) 
 
 f <- paste0('../results/models/', list.files('../results/models/'))
-model <- readRDS(f[2])
+model <- readRDS(f[])
 
 gam.check(model)
 summary(model)
@@ -70,23 +41,55 @@ plot(model)
 mat <- splicies[[3]] |> st_transform(5070)
 
 
-
-
-
-
-
+f <- file.path('../results/models', list.files('../results/models'))
+model <- readRDS(f[16])
 
 plot(model)
+abline(h=0)
 gam.check(model)
 summary(model)
 
-data.frame(mgcv:::k.check(model))
-rownames(check_table[check_table[,4] < 0.05,]) # this variable requires a higher k'
-names(splicies)
-
 # play with prediction
 
+# 1) make an aspatial prediction, determine start dates and end dates. 
+pred_df <- expand.grid(doy = seq(min(spp$doy), max(spp$doy), length.out = 25), 
+                       latitude = seq(min(spp$latitude), max(spp$latitude), length.out = 20), 
+                       bulk_density = seq(min(spp$bulk_density), max(spp$bulk_density), length.out = 20))
+pred_df$fit <- pred_df$fit <- predict(model, newdata = pred_df, type = 'response', se = F)
+pred_df$fit <- 1- pred_df$fit
 
+ # predict between these days onwards
+if({lowerDOY <- min(pred_df[ pred_df$fit > 0.1, ]$doy)} < 0){lowerDOY <- 0} else {
+  lowerDOY <- floor(lowerDOY)}
+if({upperDOY <- max(pred_df[ pred_df$fit > 0.1, ]$doy)} > 365){upperDOY <- 365} else {
+  upperDOY <- ceiling(upperDOY)}
+
+# predict only on these days. 
+timeStamps <- round(seq(lowerDOY, upperDOY, by = 14)) # biweekly time stamps for prediction
+
+# create raster layers for each time point. - this is memory hungry, so each raster
+# will be written to disk, and then these will be reloaded. 
+
+r1 <- rast(preds)[[1]]
+# s <- rast(c(replicate(length(timeStamps), r1)))
+
+for (i in seq_along(1:length(timeStamps))){
+  r_fill <- setValues(r1, timeStamps[i])
+  r_fill <- terra::mask(r_fill, preds[[1]])
+  writeRaster(r_fill, )
+  
+}
+
+plot(s)
+names(r1) <- 'doy'
+
+ts1 <- c(preds, r1)
+doy149 <- terra::predict(ts1, model, type="response") 
+doy149 <- app(doy149, function(x){1-x})
+
+
+plot(doy149)
+points(spp)
 # rip out the terms here to subset raster stack... 
 acle_model$gam$formula  # do this
 
@@ -99,28 +102,51 @@ acle_model$gam$formula  # do this
 # identify first day with > 5% probability of flowering, peak, and last day with >10% flowering
 
 # write 9 rasters, 1) FIRST , 2) PEAK, 3) LAST, and each with it's upper and lower SE. 
+model
+
+spp <- splicies[[which( gsub('.shp', '', basename(f[25])) == 
+                          gsub(' ', '_', names(splicies))  )]]
+
+f[25] # bidens frondosa. 
+
+predictWRAP <- function(x, y){
+  
+  
+}
+
+ob145 <- terra::predict(preds, model, const = data.frame(doy = 145), type="response") 
+ob152 <- terra::predict(preds, model, const = data.frame(doy = 152), type="response") 
+ob159 <- terra::predict(preds, model, const = data.frame(doy = 159), type="response") 
+ob166 <- terra::predict(preds, model, const = data.frame(doy = 166), type="response") 
+ob225 <- terra::predict(preds, model, const = data.frame(doy = 225), type="response") 
+ob280 <- terra::predict(preds, model, const = data.frame(doy = 280), type="response") 
 
 
+ob_lyrs <-  terra::predict(preds, model, 
+                           const = data.frame(doy = c(145, 159, 172)), type="response") 
 
+plot(ob100) # these should all be 0
+plot(ob225) # these should all be 1
+plot(ob310) # these should all be 0
 
+ob145_inv <- app(ob145, function(x){1-x})
+ob152_inv <- app(ob152, function(x){1-x})
+ob159_inv <- app(ob159, function(x){1-x})
+ob166_inv <- app(ob166, function(x){1-x})
+ob225_inv <- app(ob225, function(x){1-x})
+ob280_inv <- app(ob280, function(x){1-x})
 
+plot(ob145_inv)
+plot(ob152_inv)
+plot(ob159_inv)
+plot(ob166_inv)
+plot(ob225_inv)
 
+# out <- 1- out 
 
+plot(out)
+points(vect(spp))
 
-pred_df <- expand.grid(doy = seq(min(acle$doy), max(acle$doy), length.out = 25), 
-                       vpd_mean = seq(min(acle$vpd_mean), max(acle$vpd_mean), length.out = 20), 
-                       gdgfgd5 = seq(min(acle$gdgfgd5), max(acle$gdgfgd5), length.out = 20))
-
-pred <- predict(acle_model, newdata = pred_df, type = 'response', se = TRUE)
-pred_df$fit <- pred$fit
-pred_df$SE_low <- pred$fit - pred$se.fit
-pred_df$SE_high <- pred$fit + pred$se.fit
-
-
-pred_core <- pred_df[pred_df$fit > 0.2,]
-start <- pred_core[ which.min(pred_core$doy), 'doy']
-end <- pred_core[ which.max(pred_core$doy), 'doy']
-peak <- pred_df[ which.max(pred_df$fit), 'doy'] # identify peak flower, day 131. 
 
 ggplot(pred_df, aes(x = doy, y = fit)) + 
   geom_point() + 

@@ -305,7 +305,7 @@ myTryCatch <- function(expr) {
 
 # only grab models which converged without any warnings. 
 conv_ob <- function(x){
-  if(is.null(x$warning) & is.null(x$warning) == TRUE){return(x[['value']])}
+  if(is.null(x$error) & is.null(x$warning) == TRUE){return(x[['value']])}
 }
 
 # match and run the top model. 
@@ -373,24 +373,25 @@ modeller <- function(x){
     terms <- terms[-pos]
   }
   if(length(terms) > 3){terms <- terms[1:3]}
+  if(nrow(x) < 50){kval <- 15} else {kval <- 25}
   m_form <- as.formula(
       paste(
-        "flowering ~ ",  "s(doy, bs = 'cc', k = 25) + ", # smooth for cyclic data
+        "flowering ~ ",  "s(doy, bs = 'cc', k = ", kval, ") + ", # smooth for cyclic data
         paste0(terms, collapse = " + ")
       )
   )
 
-  message('feature selection complete, fitting model ', m_form, ' with spatial-autocorrelation')
+  message('feature selection complete, fitting model ', m_form)
   mm <- mods(x = x, m_form, round = 1)
   msel_tab <- mm[[1]] ;  mod.final <- mm[[2]] 
 
  #  determine whether all terms were needed. - if not remove them. 
   
-  ## LET'S MAKE A SECOND FN HERE - USE THE SAME SAC STRUCTURE AS PRESENT IN THE LAST. 
   new_form <- new_form_fn(mod.final, terms, m_form)
   if(m_form != new_form){
     message("Refitting a final model ", new_form, " without a covariate(s) for better prediction")
-    mm <- mods(x = x, m_form = new_form, round = 2, top_mod = ); 
+    top_mod <- row.names(msel_tab[1,])
+    mm <- mods(x, m_form = new_form, round = 2, model = top_mod); 
     msel_tab <- mm[[1]] ;  mod.final <- mm[[2]] 
     }
   
@@ -411,7 +412,7 @@ modeller <- function(x){
 }
 
 #' fit gamms with different spatial terms. 
-mods <- function(x, m_form, round){
+mods <- function(x, m_form, round, model){
   
   cor_form <- as.formula("~ Latitude + Longitude")
   urGamm <- MuMIn::uGamm ; formals(urGamm)$na.action <- 'na.omit' 
@@ -421,6 +422,7 @@ mods <- function(x, m_form, round){
   mod.aspatial <- mgcv::gam(m_form, data = x, family = 'binomial')
   if(morans_wrapper(x, mod.aspatial) == TRUE){
     rm(mod.aspatial)
+    message('Fitting spatial-autocorrelation error structures.')
    mod.corExp <- conv_ob(myTryCatch(urGamm(
       m_form, data = x, correlation = nlme::corExp(form = cor_form, nugget=T), family = 'binomial')))
     mod.corGaus <- conv_ob(myTryCatch(urGamm(
@@ -439,8 +441,10 @@ mods <- function(x, m_form, round){
   # select and refit the top model with method 'ML'
   msel_tab <- MuMIn::model.sel(mget(ls(pattern = 'mod[.]')))
   top_mod <- row.names(msel_tab[1,])
-  mod.final <- f_modeller(model = top_mod, m_form = m_form, data = x)
-  } else {mod.final <- f_modeller(model = rownames(data.frame(msel_tab))[1], m_form = new_form, data = x)}
+  mod.final <- f_modeller(top_mod, m_form = m_form, data = x)
+  } else {mod.final <- f_modeller(model, m_form = m_form, data = x)
+  msel_tab <- MuMIn::model.sel(mget(ls(pattern = 'mod[.]')))
+  rownames(msel_tab) <- model}
   
   return(list(msel_tab, mod.final))
   
