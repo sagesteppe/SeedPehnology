@@ -718,4 +718,12 @@ morans_wrapper <- function(x, model){
   # than we will create the spatial models. 
 }
 
-?testSpatialAutocorrelation
+# reload the rasters into a stack - ensure they are in ascending DOY Order. 
+orderLoad <- function(path){
+  doy_f <- list.files(path)
+  doy_stack <- paste0(path, 
+                      sort(as.numeric(gsub('.tif', '', 
+                                           basename(doy_f)))), '.tif')
+  doy_stack <- terra::rast(lapply(doy_stack, terra::rast))
+  return(doy_stack)
+}

@@ -47,111 +47,113 @@ spp <- splicies[[which( gsub('.rds', '', basename(f[41])) ==
 
 # play with prediction
 
-ob <- model$terms[[3]]
-
 spat_predict <- function(x){
   
-  spp_range <- spp[spp$flowering==1,]
-  hist(spp_range$doy)
+  # identify the taxon we are working with. 
+  taxon <- gsub('.rds', '', basename(f[41]))
   
-  pred_df <- expand.grid(
-    doy = seq(min(spp_range$doy)-14, max(spp_range$doy)+14, length.out = 25), # fixed, always here. 
-    bio10 = seq(min(spp_range$bio10), max(spp_range$bio10)), 
-    gddlgd10 = seq(min(spp_range$gddlgd10), max(spp_range$gddlgd10), length.out = 20)
-    )
+  #identify independent variables
+  terms <- unlist(strsplit(split = ' [+] ', as.character(model$terms[[3]][[2]]))) 
+  terms <- terms[ grep('[+]', terms, invert = TRUE)]
+  terms <- c(terms, 'doy')
+  spp_range <- sf::st_drop_geometry(spp[spp$flowering==1,terms])
+
+  #create prediction grid of variables. 
+  dfParameterValues <- data.frame(
+    ParameterName = colnames(spp_range),
+    seqFrom = apply(spp_range, MARGIN = 2, FUN = min),
+    seqTo = apply(spp_range, MARGIN = 2, FUN = max), 
+    lOut = c(15, 15, 15))
   
-  pred_df$fit <- pred_df$fit <- predict(model, newdata = pred_df, type = 'response', se = F)
-  plot(pred_df$doy, pred_df$fit)
+  pred_df <- setNames(
+    expand.grid(
+      data.frame( 
+        apply(dfParameterValues[,c("seqFrom", "seqTo", 'lOut')], 1,
+              function(x) seq(from = x['seqFrom'], to = x['seqTo'], length.out = x['lOut']))
+      )
+    ), dfParameterValues$ParameterName
+  )
   
+  # fit model
+   pred_df$fit <- predict(model, newdata = pred_df, type = 'response', se = F)
+  
+  # identify first day with > 5% probability of flowering, peak, and last day with >10% flowering
+  # predict between these days onwards
+  if({lowerDOY <- min(pred_df[pred_df$fit > 0.55, ]$doy) } < 0){lowerDOY <- 0} else {
+    lowerDOY <- floor(lowerDOY)}
+  if({upperDOY <- max(pred_df[ pred_df$fit > 0.55, ]$doy) } > 365){upperDOY <- 365} else { 
+    upperDOY <- ceiling(upperDOY)}
+   
+   # predict only on these days. 
+   timeStamps <- round(seq(lowerDOY, upperDOY, by = 14)) # biweekly time stamps for prediction
+   
+   # create raster layers for each time point. - this is memory hungry, so each raster
+   # will be written to disk, and then these will be reloaded. 
+   r1 <- rast(preds)[[1]]
+   names(r1) <- 'doy'
+   p1 <- file.path('../data/processed/timestamps', taxon)
+   
+   dir.create(file.path(p1, 'doy_constants'), showWarnings = FALSE, recursive = T)
+   for (i in seq_along(1:length(timeStamps))){
+     
+     r_fill <- terra::setValues(r1, timeStamps[i])
+     r_fill <- terra::mask(r_fill, preds[[1]])
+     
+     terra::writeRaster(r_fill, paste0(p1, '/doy_constants/', timeStamps[[i]],'.tif'), overwrite = T)
+     rm(r_fill) 
+   }
+   
+   doy_stack <- orderLoad(paste0(p1, '/doy_constants/'))
+   
+   # predict the probability of the species flowering at each time point
+   dir.create(file.path(p1, 'doy_preds'), showWarnings = FALSE)
+   for (i in seq_along(1:length(timeStamps))){
+     
+     space_time <- c(preds, doy_stack[[i]])
+     time_pred <- terra::predict(space_time, model, type="response") 
+     # time_pred <- terra::app(time_pred, function(x){1-x})
+     
+     names(time_pred) <- timeStamps[[i]]
+     msk <- terra::ifel(time_pred < 0.01, NA, time_pred)
+     time_pred <- terra::mask(time_pred, msk)
+     
+     NACount <- freq(is.na(time_pred))
+     NACount <- NACount[ NACount$value==1, 'count'] / (dim(time_pred)[1]*dim(time_pred)[2])
+     
+     if(NACount < 0.99){
+       terra::writeRaster(time_pred, 
+                          paste0(p1, '/doy_preds/', timeStamps[[i]],'.tif'), overwrite = T)
+     } else {message('> 99% of Cells are NA, not writing layer ',  i, ' to disk.')}
+     
+     rm(time_pred)
+     terra::tmpFiles(current = FALSE, orphan = TRUE, old = TRUE, remove = TRUE)
+   }
+   
+   pred_stack <- orderLoad(paste0(p1, '/doy_preds/'))
+   
 }
-
-# 1) make an aspatial prediction, determine start dates and end dates. 
-spp_range <- spp[spp$flowering==1,]
-hist(spp_range$doy)
-pred_df <- expand.grid(doy = seq(min(spp_range$doy)-14, max(spp_range$doy)+14, length.out = 25), 
-                       bio10 = seq(min(spp_range$bio10), max(spp_range$bio10)), 
-                       gddlgd10 = seq(min(spp_range$gddlgd10), max(spp_range$gddlgd10), length.out = 20))
-
-pred_df$fit <- pred_df$fit <- predict(model, newdata = pred_df, type = 'response', se = F)
-plot(pred_df$doy, pred_df$fit)
-
-# identify first day with > 5% probability of flowering, peak, and last day with >10% flowering
-# predict between these days onwards
-if({lowerDOY <- min(pred_df[pred_df$fit > 0.1, ]$doy) } < 0){lowerDOY <- 0} else {
-  lowerDOY <- floor(lowerDOY)}
-if({upperDOY <- max(pred_df[ pred_df$fit > 0.1, ]$doy) } > 365){upperDOY <- 365} else { 
-  upperDOY <- ceiling(upperDOY)}
-
-# predict only on these days. 
-timeStamps <- round(seq(lowerDOY, upperDOY, by = 14)) # biweekly time stamps for prediction
-
-# create raster layers for each time point. - this is memory hungry, so each raster
-# will be written to disk, and then these will be reloaded. 
-
-r1 <- rast(preds)[[1]]
-names(r1) <- 'doy'
-taxon <- gsub('.rds', '', basename(f[41]))
-p1 <- file.path('../data/processed/timestamps', taxon)
-
-dir.create(file.path(p1, 'doy_constants'), showWarnings = FALSE, recursive = T)
-for (i in seq_along(1:length(timeStamps))){
-  
-  r_fill <- terra::setValues(r1, timeStamps[i])
-  r_fill <- terra::mask(r_fill, preds[[1]])
-  
-  terra::writeRaster(r_fill, paste0(p1, '/doy_constants/', timeStamps[[i]],'.tif'), overwrite = T)
-  rm(r_fill) 
-}
-
-# reload the rasters into a stack - ensure they are in ascending DOY Order. 
-
-orderLoad <- function(path){
-  doy_f <- list.files(path)
-  doy_stack <- paste0(path, 
-                      sort(as.numeric(gsub('.tif', '', 
-                                             basename(doy_f)))), '.tif')
-  doy_stack <- terra::rast(lapply(doy_stack, terra::rast))
-  return(doy_stack)
-}
-
-doy_stack <- orderLoad(paste0(p1, '/doy_constants/'))
-
-# predict the probability of the species flowering at each time point
-dir.create(file.path(p1, 'doy_preds'), showWarnings = FALSE)
-for (i in seq_along(1:length(timeStamps))){
-  
-  space_time <- c(preds, doy_stack[[i]])
-  time_pred <- terra::predict(space_time, model, type="response") 
- # time_pred <- terra::app(time_pred, function(x){1-x})
-  
-  names(time_pred) <- timeStamps[[i]]
-  msk <- terra::ifel(time_pred < 0.01, NA, time_pred)
-  time_pred <- terra::mask(time_pred, msk)
-  
-  NACount <- freq(is.na(time_pred))
-  NACount <- NACount[ NACount$value==1, 'count'] / (dim(time_pred)[1]*dim(time_pred)[2])
-  
-  if(NACount < 0.99){
-  terra::writeRaster(time_pred, 
-                     paste0(p1, '/doy_preds/', timeStamps[[i]],'.tif'), overwrite = T)
-  } else {message('> 99% of Cells are NA, not writing layer ',  i, ' to disk.')}
-  
-  rm(time_pred)
-  terra::tmpFiles(current = FALSE, orphan = TRUE, old = TRUE, remove = TRUE)
-}
-
-pred_stack <- orderLoad(paste0(p1, '/doy_preds/'))
-plot(pred_stack)
 
 # isolate the initiation of flowering (10%), peak (max value), and cessation (90%) for each cell. 
 
-# subset the prediction surface to areas with suitable habitat
+p1 <- file.path('../data/processed/timestamps', 'Dichelostemma_capitatum')
+pred_stack <- orderLoad(paste0(p1, '/doy_preds/'))
 
 
+# this identifies a 'peak' date. 
+pred_stack <- ifel(is.na(pred_stack), -999, pred_stack) # we need to remove ocean NA's
+p1 <- terra::app(pred_stack, which.max) # peak flower. 
+p2 <- terra::subst(p1, from = 1:dim(pred_stack)[3], to = names(pred_stack)) 
 
+plot(pred_stack)
+plot(p2, col = c('red', 'blue', 'green', 'purple', 'brown'))
 
+# this isolates an effective start date.  
+pred_stack <- ifel(pred_stack < 0, 999, pred_stack)
+p3 <- terra::app(pred_stack, which.min) # peak flower. 
+p4 <- terra::subst(p3, from = 1:dim(pred_stack)[3], to = names(pred_stack)) 
+plot(p4)
 
-
+# 
 
 
 
