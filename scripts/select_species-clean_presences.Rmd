@@ -8,6 +8,7 @@ output: html_document
 ```{r}
 library(tidyverse)
 library(sf)
+library(terra)
 source('functions.R')
 ```
 
@@ -21,6 +22,16 @@ spp <- read.csv('../data/raw/2024species-Priorities.csv') |>
   count(scientific_name, priority)
 
 ```
+
+```{r}
+high_p <- spp %>% 
+  filter(priority == 'High') %>% 
+  arrange(-n)
+
+low_p <- spp %>% 
+  filter(priority != 'High' & ! scientific_name %in% high_p$scientific_name )
+```
+
 
 ```{r pull sheets for species and subset to original, eval = F}
 
@@ -70,6 +81,7 @@ specs2 %>%
   mutate(Anthesis = "") #%>% 
  # write.csv( '../data/processed/high_priority_sheets.csv', row.names = F, )
 
+
 rm(preds, specs2, specs1)
 
 as.Date(206, origin = '1987-01-01')
@@ -86,7 +98,7 @@ ou <- sapply(X = splicies, FUN = function(x){diptest::dip(x$doy) }) # this test 
 ou <- ou[ou < 0.03]
 sort(ou, decreasing = F)
 
-ob <- lapply(splicies, modal_finder)
+ob <- lapply(splicies, modal_finder, path = '../results/density_curves2/')
 ob <- data.frame(scntfcnm = names(ob), doy = as.numeric(ob))
 ob1 <- mutate(ob, doy = case_when(
   scntfcnm == 'Acamptopappus sphaerocephalus' ~ 215,
@@ -123,6 +135,7 @@ ob1 <- mutate(ob, doy = case_when(
 rm(ou, splicies, ob)
 ```
 
+After a single round of scoring quantile values, we will identify whether certain species have many collections which are made outside of anthesis.
 
 ```{r identify collections commonly made outside of anthesis, eval = F}
 
@@ -208,11 +221,11 @@ specs2 <- specs1 %>%
   bind_rows() %>% 
   drop_na(phen_flag) %>% 
   sf::st_drop_geometry() %>% # remove records which we already scored, and restrict to 
-  # our speices of interest.
+  # our species of interest.
   filter(scntfcnm %in% dirty1$scntfcnm, !accessr %in% d$accessr) %>% 
   select(scntfcnm, accessr, doy) %>% 
   arrange(scntfcnm, doy) %>% 
-  mutate(Anthesis = "", # select only the time troublesome time period
+  mutate(Anthesis = "", # select only the troublesome time period
          period = if_else(doy < mean(doy), 'E', 'L')) %>% 
   inner_join(., select(dirty1, scntfcnm, period), by = join_by(scntfcnm, period)) %>% 
   select(-period) %>% 
@@ -225,15 +238,54 @@ bind_rows(sb, specs2) %>%
 rm(sb, specs2, dirty1, split_bimodals, bimodals, ob1, specs1)
 ```
 
-### Subset final training data set
+Perform scoring on species with lower levels of importance
 
-Based on review of records above, we can now subset the final training set. 
+```{r}
+spps_scored <- read.csv('../data/processed/high_priority_sheets-scored.csv') %>% 
+  distinct(scntfcnm) %>% 
+  pull(scntfcnm)
+
+specs1 <- st_read('../data/processed/high_priority_sheets/high_priority_sheets.shp',
+                  quiet = T) %>% 
+  filter(! scntfcnm %in% spps_scored)
+
+# extract pca values
+preds <- rast('../results/spatial/gddPCA.tif')
+
+plot(preds)
+specs1 <- terra::extract(preds, specs1, bind = TRUE) |>
+  st_as_sf() %>% 
+  drop_na(PC1)
+
+# flag records for manual review. 
+specs1 <- split(specs1, f = specs1$scntfcn)
+specs1 <- lapply(specs1, visual_review_flagger, probs = c(0.025, 0.975))
+specs2 <- bind_rows(specs1)
+
+specs2 <- specs2 %>% 
+  drop_na(phen_flag) %>% 
+  sf::st_drop_geometry() %>% 
+  select(scntfcnm, accessr, doy) %>% 
+  arrange(scntfcnm, doy) %>% 
+  mutate(Anthesis = "") 
+
+# compare to see if records already checked for bimodality. 
+second <- read.csv('../data/processed/second_phenology_review-scored.csv')
+specs3 <- filter(specs2, !accessr %in% second$accessr)
+write.csv(specs3, '../data/processed/low_priority_sheets.csv', row.names = F, )
+
+```
+
+### Re-check density curves after manual cleaning again. 
+
+Another iterative check. If >50% of records for some species are still outside of anthesis, we will grab the first/last 10% of records, remove those which have been scored (either ~2.5% or ~5%), and score a final time. 
 
 ```{r write out training data, eval = F}
 
 scored <- bind_rows(
   read.csv('../data/processed/high_priority_sheets-scored.csv'),
-  read.csv('../data/processed/second_phenology_review-scored.csv')
+  read.csv('../data/processed/second_phenology_review-scored.csv'), 
+  read.csv('../data/processed/low_priority_sheets-scored.csv')
   ) %>% 
   mutate(
     comments = na_if(comments, ""), 
@@ -242,52 +294,99 @@ scored <- bind_rows(
     ) %>% 
   select(-comments)
 
-specimens <- st_read('../data/processed/high_priority_sheets/high_priority_sheets.shp',
-                  quiet = T)  %>% 
-  select(-scntfcn)
+d1 <- scored %>% # keep records which weren't wonky. 
+  group_by(scntfcnm, Anthesis) %>% 
+  summarise(nAnt = n()) %>% 
+  mutate(
+    recs = sum(nAnt),
+    nAnt = nAnt / recs)
 
-scored <- inner_join(scored, specimens, by = c('scntfcnm', 'doy',  'accessr'))
-specimens <- bind_rows(
-  filter(specimens, ! accessr %in% scored$accessr) , 
-  filter(scored, Anthesis == 1)
-  # records which were un-scored are simply dropped - they are neither at Anthesis or not. 
-  # further the 'absence' of flowering are dropped, these will come from Weibull. 
-) %>% 
-  mutate(Anthesis = replace_na(1), 
-         scntfcnm = str_to_sentence(scntfcnm))
+dirty <- filter(d1, n() == 2) %>% 
+  filter(Anthesis == 0, nAnt >= 0.5)
 
-st_write(specimens, '../data/processed/training/presences.shp', quiet = TRUE)
+specs1 <- st_read('../data/processed/high_priority_sheets/high_priority_sheets.shp',
+                  quiet = T) %>% 
+  filter(scntfcnm %in% unique(dirty$scntfcnm))
+pca1 <- terra::rast('../results/spatial/gddPCA.tif')
+specs1 <- terra::extract(pca1, specs1, bind = TRUE) |>
+  st_as_sf() %>% 
+  drop_na(PC1)
+
+dirty1 <- filter(scored, scntfcnm %in% dirty$scntfcnm) %>% 
+  group_by(scntfcnm) %>% 
+  mutate(
+    avg_fl = mean(doy), 
+    period = if_else(doy < avg_fl, 'E', 'L')
+    ) %>% 
+  group_by(scntfcnm, Anthesis, period) %>% 
+  summarise(nAnt = n()) %>% 
+  mutate(
+    recs = sum(nAnt),
+    nAnt = nAnt / recs
+  ) %>% 
+  filter(Anthesis == 0, nAnt >= 0.5)
+
+specs1 <- split(specs1, f = specs1$scntfcnm)
+specs1 <- lapply(specs1, visual_review_flagger, probs = c(0.01, 0.9)) %>% 
+  bind_rows() %>% 
+  drop_na(phen_flag) %>% 
+  filter(! accessr %in% scored$accessr) %>% 
+  select(scntfcnm, accessr, doy) %>% 
+  st_drop_geometry() %>% 
+  arrange(scntfcnm, doy)
+
+write.csv(specs1, '../data/processed/troublesomeSpecies.csv', row.names = F)
 
 rm(scored)
 ```
+
+### Subset Final training set and create flowering 'absences'
 
 Now create flowering 'absences' for these species. We will start with species which were not flagged
 via our bimodal detection. 
 
 ```{r}
 
-trouble <- read.csv('../data/processed/second_phenology_review-scored.csv') %>% 
-  pull(scntfcnm) %>% 
-  unique()
+scored <- bind_rows(
+  read.csv('../data/processed/high_priority_sheets-scored.csv'),
+  read.csv('../data/processed/second_phenology_review-scored.csv'), 
+  read.csv('../data/processed/low_priority_sheets-scored.csv'), 
+  read.csv('../data/processed/troublesomeSpecies-scored.csv')
+  ) %>% 
+  mutate(
+    Anthesis = if_else(is.na(Anthesis), 999, Anthesis)
+    ) %>% 
+  select(-comments)
 
 specimens <- st_read('../data/processed/training/presences.shp', quiet = TRUE ) %>% 
-  filter(! scntfcnm %in% trouble)
-pca1 <- terra::rast('../results/spatial/gddPCA.tif')
+  filter(! scntfcnm %in% scored[scored$Anthesis %in% c(0, 999), 'accessr'] )
 
+pca1 <- terra::rast('../results/spatial/gddPCA.tif')
 specimens <- terra::extract(pca1, specimens, bind = TRUE) |>
   st_as_sf() %>% 
   drop_na(PC1)
 
+# only re-run the generation of initiation cessation 
+# tables for species which were included in the 'low priority'
+# and 'troublesome tables
+
+rerun <- bind_rows(
+  read.csv('../data/processed/low_priority_sheets-scored.csv'),
+  read.csv('../data/processed/troublesomeSpecies-scored.csv')
+) %>% 
+  distinct(scntfcnm) %>% 
+  pull(scntfcnm)
+
+specimens <- filter(specimens, scntfcnm %in% rerun)
 splicies <- split(specimens, f = specimens$scntfcnm)
 no_cores <- parallel::detectCores()
 # write out initiation cessation tables for many species
 
-splicies <- Filter(function(x) nrow(x) > 300, splicies)
+splicies <- Filter(function(x) nrow(x) < 30, splicies)
 names(splicies)
 
-lapply(splicies, ince_writer) 
+lapply(splicies[1], ince_writer) 
 ```
-
 
 Generate Phenology absences for start and ends of GAM curve for records. 
 
