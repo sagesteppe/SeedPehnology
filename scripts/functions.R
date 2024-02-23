@@ -238,13 +238,13 @@ pheno_abs <- function(x, estimates){
   out <- data.frame(initAbs = ed, cessAbs = ld)
   out <- dplyr::bind_cols(x, data.frame(initAbs = ed, cessAbs = ld))
   
-  # ensure that the cessation is > 1 weeks after observation and
-  # initiation greater > 1 weeks before observation.
+  # ensure that the cessation is > 3 days after observation and
+  # initiation greater > 3 days before observation.
   out <- out |>
     dplyr::rowwise() |>
     dplyr::mutate(
-      initAbs = if_else((doy - 10) < initAbs, (doy - 10), initAbs), 
-      cessAbs = if_else((doy + 10) > cessAbs, (doy + 10), cessAbs)
+      initAbs = if_else((doy - 7) < initAbs, (doy - 7), initAbs), 
+      cessAbs = if_else((doy + 7) > cessAbs, (doy + 7), cessAbs)
     )
   
   # identify records in clusters which have a nearest neighbor belonging to a 
@@ -575,7 +575,7 @@ l_max <- function(x){
 
 #' find splits for modal distributions at a set threshold and plot all data for visual review
 
-modal_finder <- function(x){
+modal_finder <- function(x, path){
   
   dd <- density(x$doy)
   
@@ -605,7 +605,7 @@ modal_finder <- function(x){
   } else {min <- 999}
   
   
-  png(filename = paste0('../results/density_curves/', 
+  png(filename = paste0(path, 
                         gsub(' ', '_', sf::st_drop_geometry(x$scntfcnm[1])), '.png'),
       width = 480, height = 320)
   hist(x = x$doy, main = x$scntfcnm[1], xlab = 'Day of Year (DOY)', prob = TRUE, 
@@ -648,7 +648,7 @@ speidR <- function(x, template, pout){
 
 
 
-ince_writer <- function(x){
+ince_writer <- function(x, bs){
   
   nf <- x[ st_nearest_feature(x), ]
   recs2clust <- x[ as.numeric( st_distance(x, nf, by_element = T) ) < 80000 , ] 

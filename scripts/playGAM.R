@@ -9,7 +9,7 @@ source('functions.R')
 f <- paste0('../results/PresAbs/', list.files('../results/PresAbs', pattern = 'shp$'))
 spp <- lapply(f, st_read, quiet = TRUE) |>
   bind_rows() |>
-  select(-accessr) |>  
+  select(-accessr) #|>  
   pivot_longer(cols = doy:cessAbs, values_to = 'doy', names_to = 'flowering') |> 
   mutate(flowering = if_else(flowering == 'doy', 1, 0)) # don't convert to factor
 
@@ -31,7 +31,6 @@ spp <- terra::extract(preds, spp, bind = TRUE) |>
 splicies <- split(spp, f = spp$scntfcnm)
 splicies <- Filter(function(y) nrow(y) >= 50, splicies)
 # lapply(X = splicies[40:50], modeller) 
-
 
 
 f <- file.path('../results/models', list.files('../results/models'))
@@ -87,9 +86,14 @@ spat_predict <- function(x){
    # predict only on these days. 
    timeStamps <- round(seq(lowerDOY, upperDOY, by = 14)) # biweekly time stamps for prediction
    
+   # predict only in areas with suitable habitat for the species. 
+   sdm_surfs <- list.files('../data/raw/PhenPredSurfaces')
+   focal_surf <- terra::rast( sdm_surfs[ grep(taxon, sdm_surfs) ] )
+   preds_sub <- terra::mask(preds, focal_surf)
+   
    # create raster layers for each time point. - this is memory hungry, so each raster
    # will be written to disk, and then these will be reloaded. 
-   r1 <- rast(preds)[[1]]
+   r1 <- rast(preds_sub)[[1]]
    names(r1) <- 'doy'
    p1 <- file.path('../data/processed/timestamps', taxon)
    
@@ -97,7 +101,7 @@ spat_predict <- function(x){
    for (i in seq_along(1:length(timeStamps))){
      
      r_fill <- terra::setValues(r1, timeStamps[i])
-     r_fill <- terra::mask(r_fill, preds[[1]])
+     r_fill <- terra::mask(r_fill, preds_sub[[1]])
      
      terra::writeRaster(r_fill, paste0(p1, '/doy_constants/', timeStamps[[i]],'.tif'), overwrite = T)
      rm(r_fill) 
@@ -109,7 +113,7 @@ spat_predict <- function(x){
    dir.create(file.path(p1, 'doy_preds'), showWarnings = FALSE)
    for (i in seq_along(1:length(timeStamps))){
      
-     space_time <- c(preds, doy_stack[[i]])
+     space_time <- c(preds_sub, doy_stack[[i]])
      time_pred <- terra::predict(space_time, model, type="response") 
      # time_pred <- terra::app(time_pred, function(x){1-x})
      
@@ -137,7 +141,8 @@ spat_predict <- function(x){
 
 p1 <- file.path('../data/processed/timestamps', 'Dichelostemma_capitatum')
 pred_stack <- orderLoad(paste0(p1, '/doy_preds/'))
-
+plot(pred_stack)
+out <- values(pred_stack)
 
 # this identifies a 'peak' date. 
 pred_stack <- ifel(is.na(pred_stack), -999, pred_stack) # we need to remove ocean NA's
@@ -149,17 +154,9 @@ plot(p2, col = c('red', 'blue', 'green', 'purple', 'brown'))
 
 # this isolates an effective start date.  
 pred_stack <- ifel(pred_stack < 0, 999, pred_stack)
-p3 <- terra::app(pred_stack, which.min) # peak flower. 
+p3 <- terra::app(pred_stack, which.min) # start date.  
 p4 <- terra::subst(p3, from = 1:dim(pred_stack)[3], to = names(pred_stack)) 
 plot(p4)
-
-# 
-
-
-
-
-
-
 
 
 
