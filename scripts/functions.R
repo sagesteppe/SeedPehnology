@@ -235,8 +235,16 @@ pheno_abs <- function(x, estimates){
   # Give the earliest initiation DOY absence to the warmest place, 
   # and the latest absences to the coldest places. 
   x <- arrange(x, ClusterID, PC1)
-  out <- data.frame(initAbs = ed, cessAbs = ld)
-  out <- dplyr::bind_cols(x, data.frame(initAbs = ed, cessAbs = ld))
+  out1 <- data.frame(initAbs = ed, cessAbs = ld)
+  if(nrow(out1) > nrow(x)){
+    out1 <- out1[sample(nrow(out1), size = nrow(x)),]
+  } else if (nrow(out1) < nrow(x)){
+    message( (nrow(x) - nrow(out1)))
+    
+    out1 <- rbind(out1,
+                  out1[ sample(nrow(out1), size = (nrow(x) - nrow(out1))),])
+  }
+  out <- dplyr::bind_cols(x, out1)
   
   # ensure that the cessation is > 3 days after observation and
   # initiation greater > 3 days before observation.
@@ -288,6 +296,21 @@ pheno_abs <- function(x, estimates){
   return(out)
 }
 
+#' generate phenology absences
+
+pheno_abs_writer <- function(x){
+  
+  nf <- x[ st_nearest_feature(x), ]
+  recs2clust <- x[ as.numeric( st_distance(x, nf, by_element = T) ) < 80000 , ] 
+  clusts <- geoClust_wrap(recs2clust, 'PC1') # identify clusters here.
+  
+  r_taxon <- gsub(' ', '_', sf::st_drop_geometry(x$scntfcnm[1]))
+  est <- dplyr::filter(tables, scntfcnm == r_taxon)
+  out <- pheno_abs(clusts, est) |>
+    dplyr::select(scntfcnm, accessr, doy, initAbs, cessAbs)
+  
+  sf::st_write(out, paste0('../results/PresAbs/', r_taxon, '.shp'), quiet = TRUE, append = FALSE)
+}
 
 # assess the output from a function. 
 myTryCatch <- function(expr) {
@@ -661,22 +684,6 @@ ince_writer <- function(x, bs){
   
   message(taxon, ' complete ' , Sys.time(), ' cooling down for 60 seconds before starting next species')
   Sys.sleep(60) # let the computer cool down for 60 seconds before re-engaging.
-}
-
-#' generate phenology absences
-
-pheno_abs_writer <- function(x){
-  
-  nf <- x[ st_nearest_feature(x), ]
-  recs2clust <- x[ as.numeric( st_distance(x, nf, by_element = T) ) < 80000 , ] 
-  clusts <- geoClust_wrap(recs2clust, 'PC1') # identify clusters here.
-  
-  r_taxon <- gsub(' ', '_', sf::st_drop_geometry(x$scntfcnm[1]))
-  est <- dplyr::filter(tables, scntfcnm == r_taxon)
-  out <- pheno_abs(clusts, est) |>
-    dplyr::select(scntfcnm, accessr, doy, initAbs, cessAbs)
-  
-  sf::st_write(out, paste0('../results/PresAbs/', r_taxon, '.shp'), quiet = TRUE)
 }
 
 

@@ -10,6 +10,7 @@ library(tidyverse)
 library(sf)
 library(terra)
 source('functions.R')
+set.seed(42)
 ```
 
 ```{r import species}
@@ -31,7 +32,6 @@ high_p <- spp %>%
 low_p <- spp %>% 
   filter(priority != 'High' & ! scientific_name %in% high_p$scientific_name )
 ```
-
 
 ```{r pull sheets for species and subset to original, eval = F}
 
@@ -87,7 +87,7 @@ rm(preds, specs2, specs1)
 as.Date(206, origin = '1987-01-01')
 ```
 
-the above records were flagged by visual review of the specimen. During this process, the realization that the check for bimodality should have been performed, and the verification that certain species have many more records outside anthesis, called for a second batch of scoring. 
+the above records were flagged by visual review of the specimen. During this process, the realization that the check for bimodality should have been performed, and the verification that certain species have many more records outside anthesis, called for a second batch of scoring.
 
 ```{r detect multimodal data, eval = F}
 
@@ -179,7 +179,7 @@ dirty1 <- filter(d, scntfcnm %in% dirty$scntfcnm) %>%
 rm(dirty, d)
 ```
 
-Identify records in quantiles. 
+Identify records in quantiles.
 
 ```{r identify records for second batch of scoring, eval = F}
 
@@ -276,9 +276,9 @@ write.csv(specs3, '../data/processed/low_priority_sheets.csv', row.names = F, )
 
 ```
 
-### Re-check density curves after manual cleaning again. 
+### Re-check density curves after manual cleaning again.
 
-Another iterative check. If >50% of records for some species are still outside of anthesis, we will grab the first/last 10% of records, remove those which have been scored (either ~2.5% or ~5%), and score a final time. 
+Another iterative check. If \>50% of records for some species are still outside of anthesis, we will grab the first/last 10% of records, remove those which have been scored (either \~2.5% or \~5%), and score a final time.
 
 ```{r write out training data, eval = F}
 
@@ -342,8 +342,7 @@ rm(scored)
 
 ### Subset Final training set and create flowering 'absences'
 
-Now create flowering 'absences' for these species. We will start with species which were not flagged
-via our bimodal detection. 
+Now create flowering 'absences' for these species. We will start with species which were not flagged via our bimodal detection.
 
 ```{r eval= F}
 
@@ -391,8 +390,6 @@ names(splicies)
 lapply(splicies[11:13], ince_writer, bs = 20) 
 ```
 
-
-
 ```{r catch missed species, eval = F}
 
 p <- '../results/initation_cessation_tables'
@@ -401,53 +398,52 @@ names(tables) <- gsub('.csv', '', list.files(p))
 tables <- data.table::rbindlist(tables, idcol = 'scntfcnm')
 
 specimens <- st_read('../data/processed/training/presences.shp', quiet = TRUE ) %>% 
-  bind_rows()
+  bind_rows() %>% 
+  filter(! accessr %in% read.csv('../data/processed/manual_review-after2nddensitycurves.csv')$accessr)
 
-needed <- gsub('_', ' ', setdiff(
-  gsub(' ', '_', unique(specimens$scntfcnm)), unique(tables$scntfcnm)))
-specimens <- filter(specimens, scntfcnm %in% needed)
+# now let's also remove these
+
+processed <- gsub('[.]csv', '', gsub('_', ' ', list.files(p)))
+specimens <- #filter(specimens, scntfcnm %in% needed) %>% 
+  filter(specimens, ! scntfcnm %in% processed)
 pca1 <- terra::rast('../results/spatial/gddPCA.tif')
 specimens <- terra::extract(
   terra::rast('../results/spatial/gddPCA.tif'), specimens, bind = TRUE) |>
   st_as_sf() %>% 
   drop_na(PC1)
 
-# write out and review these again based on the density curves
-
-
+# write out and review these again based on the second round of  density curves
 
 splicies <- split(specimens, f = specimens$scntfcnm)
 no_cores <- parallel::detectCores()
-names(splicies)
-lapply(splicies, ince_writer, bs = 20) 
+
+splicies <- Filter(function(x) nrow(x) >= 10, splicies)
+names(splicies) # remove ones which are in the folder...
+lapply(splicies[2:4], ince_writer, bs = 20) # 41, 40? 42
 ```
 
-Generate Phenology absences for start and ends of GAM curve for records. 
+Generate Phenology absences for start and ends of GAM curve for records.
 
 ```{r}
 
 p <- '../results/initation_cessation_tables'
-tables <- lapply(file.path(p, list.files(path = p)), repntfcnm)
+tables <- lapply(file.path(p, list.files(path = p)), read.csv)
+names(tables) <- gsub('[.]csv', '', basename(list.files(path = p)))
+tables <- data.table::rbindlist(tables, idcol = 'scntfcnm')
 
 f <- gsub('.shp', '', list.files('../results/PresAbs', pattern = 'shp$'))
-tables <- filter(tables, ! scntfcnm %in% f)
 
 specimens <- st_read('../data/processed/training/presences.shp', quiet = TRUE ) %>% 
   bind_rows()
-  #filter(scntfcnm %in% gsub('_', ' ', names(tables))) #%>% 
-  #filter(scntfcnm %in% gsub('_', ' ', unique(tables$scntfcnm)))
 pca1 <- terra::rast('../results/spatial/gddPCA.tif')
 specimens <- terra::extract(
   terra::rast('../results/spatial/gddPCA.tif'), specimens, bind = TRUE) |>
   st_as_sf() %>% 
   drop_na(PC1)
 
-setdiff(gsub(' ', '_', unique(specimens$scntfcnm)), unique(tables$scntfcnm))
+tables <- filter(tables, gsub('_', ' ', scntfcnm) %in% specimens$scntfcnm)
+specimens <- filter(specimens, scntfcnm %in% gsub('_', ' ', tables$scntfcnm))
 
 specimens <- split(specimens, f = specimens$scntfcnm)
 lapply(specimens, pheno_abs_writer)
 ```
-
-
-
-
