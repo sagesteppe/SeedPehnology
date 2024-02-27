@@ -705,42 +705,44 @@ ince_writer <- function(x, bs){
 }
 
 
-#' determine whether a covariate should be dropped from a final model 
+#' determine whether a co-variate should be dropped from a final model 
 new_form_fn <- function(x, terms, m_form){
   
-  terms2remove <- broom::tidy(x, parametric = TRUE) |>
-    dplyr::filter(p.value > 0.1 & term != '(Intercept)') |>  
-    dplyr::pull(term) # identify terms to remove.
+  ob <- broom::tidy(x, parametric = TRUE) |>
+    dplyr::filter(term != '(Intercept)')
   
-  if(length(terms2remove)>0){
+  if(nrow(ob) > 1){
     
-    terms_sub <- terms[- grep(paste(terms2remove, collapse = "|"), terms) ] 
-    if(length(terms_sub) > 0){
-      m_form <- as.formula(
-        paste(
-          "flowering ~ ",  "s(doy, bs = 'cc', k = 25) + ", # smooth for cyclic data
-          paste0(terms_sub, collapse = " + ")
+    terms2remove <- dplyr::filter(ob, p.value > 0.1) |>  
+      dplyr::pull(term) # identify terms to remove.
+    
+    if(length(terms2remove)>0){
+      terms_sub <- terms[- grep(paste(terms2remove, collapse = "|"), terms) ] 
+      if(length(terms_sub) > 0){
+        m_form <- as.formula(
+          paste(
+            "flowering ~ ",  "s(doy, bs = 'cc', k = ", kval, ") + ", # smooth for cyclic data
+            paste0(terms_sub, collapse = " + ")
+          )
         )
-      )} else if (length(terms_sub) == 0){ # loosen p-value again to see if 
-        # any of these variables are sensible.
+      } else {
         
-        terms2remove <- broom::tidy(x, parametric = TRUE) |>
-          dplyr::filter(p.value > 0.2 & term != '(Intercept)') |>  
-          dplyr::pull(term) # identify terms to remove.
+        terms2remove <- dplyr::arrange(ob, p.value) |>
+          dplyr::pull(term)
+        terms2remove <- terms2remove[2:length(terms2remove)]
         terms_sub <- terms[- grep(paste(terms2remove, collapse = "|"), terms) ] 
-        
-        if(length(terms_sub) > 0){
-         m_form <- as.formula(
-            paste(
-              "flowering ~ ",  "s(doy, bs = 'cc', k = 25) + ", # smooth for cyclic data
-              paste0(terms_sub, collapse = " + ")
-            )
-        } else {m_form <- as.formula("flowering ~ s(doy, bs = 'cc', k = 25)")}
-    
-    return(m_form)
+        m_form <- as.formula(
+          paste(
+            "flowering ~ ",  "s(doy, bs = 'cc', k = ", kval, ") + ", # smooth for cyclic data
+            paste0(terms_sub, collapse = " + ")
+          )
+        )
+      }
+      return(m_form)
+    } else {return(m_form)}
   } else {return(m_form)}
-  }
 }
+
 
 #' determine whether we should model spatial autocorrelation
 morans_wrapper <- function(x, model){

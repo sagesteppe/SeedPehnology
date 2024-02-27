@@ -30,37 +30,24 @@ spp <- terra::extract(preds, spp, bind = TRUE) |>
       doy:cti, ~ ifelse(is.na(.x), mean(.x, na.rm = TRUE), .x))) 
 
 splicies <- split(spp, f = spp$scntfcnm)
-names(splicies)
-lapply(X = splicies[142], modeller) 
+lapply(X = splicies[8], modeller) 
 
-
-
-
-# f <- file.path('../results/models', list.files('../results/models')) 
-
-model <- readRDS(f[122])
+f1 <- file.path('../results/models', list.files('../results/models'))
 
 plot(model)
 abline(h=0)
 gam.check(model)
 summary(model)
 
-spp <- splicies[[which( gsub('.rds', '', basename(f[41])) == 
-                          gsub(' ', '_', names(splicies))  )]]
-
 # play with prediction
 splicies <- bind_rows(splicies)
 head(splicies)
-spat_predict(f[107], spp = splicies)
-
 
 sdm_surfs <- list.files('../data/spatial/PhenPredSurfaces') # need to align rasters
 focal_surf <- terra::rast(
   file.path( '../data/spatial/PhenPredSurfaces', sdm_surfs[1])
 )
 preds <- project(preds, crs(focal_surf))
-
-spat_predict(f[107], spp = splicies)
 
 #' predict a gam into space and time
 #' @param x a vector of paths to models
@@ -85,8 +72,8 @@ spat_predict <- function(x, spp){
   dfParameterValues <- data.frame(
     ParameterName = colnames(spp_range),
     seqFrom = apply(spp_range, MARGIN = 2, FUN = min),
-    seqTo = apply(spp_range, MARGIN = 2, FUN = max), 
-    lOut = c(15, 15, 15))
+    seqTo = apply(spp_range, MARGIN = 2, FUN = max),
+    lOut = rep(15, times = ncol(spp_range)))
   
   pred_df <- setNames(
     expand.grid(
@@ -100,12 +87,14 @@ spat_predict <- function(x, spp){
   # fit model
    pred_df$fit <- predict(model, newdata = pred_df, type = 'response', se = F)
   
-  # identify first day with > 5% probability of flowering, peak, and last day with >10% flowering
+  # identify first day with > 0.6% probability of flowering, and last day with >.6% flowering
   # predict between these days onwards
-  if({lowerDOY <- min(pred_df[pred_df$fit > 0.6, ]$doy) } < 0){lowerDOY <- 0} else {
+  if({lowerDOY <- min(pred_df[pred_df$fit > 0.55, ]$doy) } < 0){lowerDOY <- 0} else {
     lowerDOY <- floor(lowerDOY)}
-  if({upperDOY <- max(pred_df[ pred_df$fit > 0.60, ]$doy) } > 365){upperDOY <- 365} else { 
+  if({upperDOY <- max(pred_df[ pred_df$fit > 0.6, ]$doy) } > 365){upperDOY <- 365} else { 
     upperDOY <- ceiling(upperDOY)}
+   
+   # if the upperdoy is greater than 1 month after the last observed flowering record, cull it to +31 days.
    
    # predict only on these days. 
    timeStamps <- round(seq(lowerDOY, upperDOY, by = 14)) # biweekly time stamps for prediction
@@ -116,11 +105,7 @@ spat_predict <- function(x, spp){
      file.path( '../data/spatial/PhenPredSurfaces',
                 sdm_surfs[ grep(taxon, sdm_surfs)])
      )
-   preds_sub <-    sdm_surfs <- list.files('../data/spatial/PhenPredSurfaces')
-   focal_surf <- terra::rast(
-     file.path( '../data/spatial/PhenPredSurfaces',
-                sdm_surfs[ grep(taxon, sdm_surfs)])
-   )
+
    focal_surf <- resample(focal_surf, preds)
    preds_sub <- terra::crop(preds, focal_surf, mask = TRUE)
    
@@ -144,25 +129,26 @@ spat_predict <- function(x, spp){
    
    # predict the probability of the species flowering at each time point
    dir.create(file.path(p1, 'doy_preds'), showWarnings = FALSE)
+   
+   # determine how many cells are suitable habitat. # use this to determine
+   # whether it's worth writing out that time stamp
+   n_cells <- (dim(focal_surf)[1] * dim(focal_surf)[2])
+   prop_pop <- freq(is.na(focal_surf))$count[1]  / n_cells 
+   
    for (i in seq_along(1:length(timeStamps))){
      
      space_time <- c(preds_sub, doy_stack[[i]])
      time_pred <- terra::predict(space_time, model, type="response") 
-     # time_pred <- terra::app(time_pred, function(x){1-x})
      
      names(time_pred) <- timeStamps[[i]]
-     msk <- terra::ifel(time_pred < 0.01, NA, time_pred)
+     msk <- terra::ifel(time_pred < 0.5, NA, time_pred)
      time_pred <- terra::mask(time_pred, msk)
      
-     # determine how many cells are suitable habitat. 
-     total_habitat <- sum(focal_surf)
-     NACount <- freq(is.na(time_pred)) # if more than 95% of cells are unlikely to be
-     # in flower do not write raster for that date.
-     message(total_habitat)
-     NACount <- NACount[ NACount$value==1, 'count'] / total_habitat
-     message(NACount)
+     populated <- freq(is.na(time_pred))
+     populated <- populated[ populated$value==0, 'count']
+     if(length(populated)==0){populated<-1}
      
-     if(NACount < 0.95){
+     if(populated >= ((n_cells * prop_pop) * 0.05) ){
        terra::writeRaster(time_pred, 
                           paste0(p1, '/doy_preds/', timeStamps[[i]],'.tif'), overwrite = T)
      } else {message('> 95% of Cells are NA, not writing layer ',  i, ' to disk.')}
@@ -175,12 +161,26 @@ spat_predict <- function(x, spp){
    
 }
 
+summary( readRDS(f1[8]) )
+spat_predict(f1[127], spp = splicies)
+
 # isolate the initiation of flowering (10%), peak (max value), and cessation (90%) for each cell. 
 
-p1 <- file.path('../data/processed/timestamps', 'Dichelostemma_capitatum')
+focal_surf <- terra::rast(
+  file.path( '../data/spatial/PhenPredSurfaces', 'Achnatherum_speciosum.tif'))
+focal_surf <- resample(focal_surf, preds)
+rm(focal_surf)
+
+p1 <- file.path('../data/processed/timestamps', 'Erigeron_bloomeri')
 pred_stack <- orderLoad(paste0(p1, '/doy_preds/'))
 plot(pred_stack)
 out <- values(pred_stack)
+
+
+
+
+
+
 
 # this identifies a 'peak' date. 
 pred_stack <- ifel(is.na(pred_stack), -999, pred_stack) # we need to remove ocean NA's
