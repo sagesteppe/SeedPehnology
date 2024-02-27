@@ -157,49 +157,35 @@ spat_predict <- function(x, spp){
      terra::tmpFiles(current = FALSE, orphan = TRUE, old = TRUE, remove = TRUE)
    }
    
+   unlink(paste0(p1, '/doy_constants/')) # remove the constants. 
    pred_stack <- orderLoad(paste0(p1, '/doy_preds/'))
+   
+   # this identifies a 'peak' date. 
+   peak_date <- terra::app(pred_stack, which.max) # peak flower. 
+   peak_flr <- terra::subst(peak_date, 
+                            from = 1:dim(pred_stack)[3], to = names(pred_stack)) 
+   
+   # this isolates an effective start date.  
+   start_date <- terra::app(pred_stack, which.min) # start date.  
+   start_flr <- terra::subst(start_date, 
+                             from = 1:dim(pred_stack)[3], to = names(pred_stack)) 
+   
+   # this isolates an effective end of flowering date. 
+   v_mat <- terra::values(pred_stack)
+   v <- colnames(v_mat)[ max.col(!is.na(v_mat), ties.method = 'last') ]
+   end_flr <- terra::setValues(focal_surf, values = v)
+   rm(v_mat, v)
+   
+   flr_events <- c(start_flr, peak_flr, end_flr)
+   names(flr_events) <- c('Initiation', 'Peak', 'Cessation')
+   flr_events <- terra::mask(flr_events, focal_surf)
+   flr_events <- terra::trim(flr_events)
+   
+   dir.create(file.path(p1, 'summary_doys'), showWarnings = FALSE)
+   writeRaster(flr_events, file.path(p1, 'summary_doys', paste0(taxon, '.tif')))
+   terra::tmpFiles(current = FALSE, orphan = TRUE, old = TRUE, remove = TRUE)
    
 }
 
 summary( readRDS(f1[8]) )
 spat_predict(f1[127], spp = splicies)
-
-# isolate the initiation of flowering (10%), peak (max value), and cessation (90%) for each cell. 
-
-focal_surf <- terra::rast(
-  file.path( '../data/spatial/PhenPredSurfaces', 'Achnatherum_speciosum.tif'))
-focal_surf <- resample(focal_surf, preds)
-rm(focal_surf)
-
-p1 <- file.path('../data/processed/timestamps', 'Erigeron_bloomeri')
-pred_stack <- orderLoad(paste0(p1, '/doy_preds/'))
-plot(pred_stack)
-out <- values(pred_stack)
-
-
-
-
-
-
-
-# this identifies a 'peak' date. 
-pred_stack <- ifel(is.na(pred_stack), -999, pred_stack) # we need to remove ocean NA's
-p1 <- terra::app(pred_stack, which.max) # peak flower. 
-p2 <- terra::subst(p1, from = 1:dim(pred_stack)[3], to = names(pred_stack)) 
-
-plot(pred_stack)
-plot(p2, col = c('red', 'blue', 'green', 'purple', 'brown'))
-
-# this isolates an effective start date.  
-pred_stack <- ifel(pred_stack < 0, 999, pred_stack)
-p3 <- terra::app(pred_stack, which.min) # start date.  
-p4 <- terra::subst(p3, from = 1:dim(pred_stack)[3], to = names(pred_stack)) 
-plot(p4)
-
-
-
-
-# https://stacyderuiter.github.io/s245-notes-bookdown/gams-generalized-additive-models.html
-# notes on GAMS!!
-
-
