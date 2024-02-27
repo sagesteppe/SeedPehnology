@@ -436,7 +436,8 @@ f <- gsub('.shp', '', list.files('../results/PresAbs', pattern = 'shp$'))
 specimens <- st_read('../data/processed/training/presences.shp', quiet = TRUE ) %>% 
   bind_rows()
 pca1 <- terra::rast('../results/spatial/gddPCA.tif')
-specimens <- terra::extract(
+specimens <- terra::e
+xtract(
   terra::rast('../results/spatial/gddPCA.tif'), specimens, bind = TRUE) |>
   st_as_sf() %>% 
   drop_na(PC1)

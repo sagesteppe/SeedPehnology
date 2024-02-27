@@ -331,7 +331,6 @@ conv_ob <- function(x){
   if(is.null(x$error) & is.null(x$warning) == TRUE){return(x[['value']])}
 }
 
-# match and run the top model. 
 f_modeller <- function(model, m_form, type = c("mod.aspatial", "mod.corExp", "mod.corGaus",
                                    'mod.corSpher', 'mod.corRatio', 'mod.corLin'), data){
   
@@ -369,10 +368,10 @@ modeller <- function(x){
   
   # we will determine which features have utility in predicting whether a 
   # population has individuals in a phenophase. 
-  ctrl <- caret::rfeControl(functions = caret::gamFuncs,
-                            method = "repeatedcv", number = 10,  repeats = 5,
-                            verbose = FALSE, rerank = TRUE, 
-                            allowParallel = TRUE, seeds = NA)
+   ctrl <- caret::rfeControl(functions = caret::gamFuncs,
+                             method = "repeatedcv", number = 10,  repeats = 5,
+                             verbose = FALSE, rerank = TRUE, 
+                             allowParallel = TRUE, seeds = NA)
   
   col_range <- (grep('flowering', colnames(x)) + 1):(grep('geometry',  colnames(x)) - 3)
   inde <- as.matrix(sf::st_drop_geometry(x[,col_range]))
@@ -380,12 +379,31 @@ modeller <- function(x){
   
   cl <- parallel::makeCluster(parallel::detectCores(), type='PSOCK')
   doParallel::registerDoParallel(cl)
-  lmProfile <- caret::rfe(
-    as.matrix(sf::st_drop_geometry(x[,col_range])), # independent variables
-    sf::st_drop_geometry(x$flowering), # dependent variables
-    sizes  = c(2:5),
-    rank = TRUE, 
-    rfeControl = ctrl)
+  
+  ob <- myTryCatch(
+     caret::rfe(
+     as.matrix(sf::st_drop_geometry(x[,col_range])), # independent variables
+     sf::st_drop_geometry(x$flowering), # dependent variables
+     sizes  = c(2:5),
+     rank = TRUE, 
+     rfeControl = ctrl)
+  )
+  
+  if(is.null(ob$error) == TRUE){lmProfile <- ob[['value']]} else{
+    'unable to perform recursive feature elimination with this species. sample size
+    is likely too small to accomodate the number of features and knots, peforming
+    selection with generalized linear models.'
+    ctrl <- caret::rfeControl(functions = caret::lmFuncs,
+                              method = "repeatedcv", number = 10,  repeats = 5,
+                              verbose = FALSE, rerank = TRUE, 
+                              allowParallel = TRUE, seeds = NA)
+    lmProfile <-  caret::rfe(
+       as.matrix(sf::st_drop_geometry(x[,col_range])), # independent variables
+       sf::st_drop_geometry(x$flowering), # dependent variables
+       sizes  = c(2:5),
+       rank = TRUE, 
+       rfeControl = ctrl)
+  }
   invisible(ParallelLogger::stopCluster(cl))
   rm(cl)
   
@@ -418,7 +436,7 @@ modeller <- function(x){
     msel_tab <- mm[[1]] ;  mod.final <- mm[[2]] 
     }
   
-  # write out results to local #
+  # write out results to local 
   msel_tab <- data.frame(msel_tab) |>
     tibble::rownames_to_column('model')
   
@@ -703,10 +721,25 @@ new_form_fn <- function(x, terms, m_form){
           "flowering ~ ",  "s(doy, bs = 'cc', k = 25) + ", # smooth for cyclic data
           paste0(terms_sub, collapse = " + ")
         )
-      )
-    } else {m_form <- as.formula("flowering ~ s(doy, bs = 'cc', k = 25)")}
+      )} else if (length(terms_sub) == 0){ # loosen p-value again to see if 
+        # any of these variables are sensible.
+        
+        terms2remove <- broom::tidy(x, parametric = TRUE) |>
+          dplyr::filter(p.value > 0.2 & term != '(Intercept)') |>  
+          dplyr::pull(term) # identify terms to remove.
+        terms_sub <- terms[- grep(paste(terms2remove, collapse = "|"), terms) ] 
+        
+        if(length(terms_sub) > 0){
+         m_form <- as.formula(
+            paste(
+              "flowering ~ ",  "s(doy, bs = 'cc', k = 25) + ", # smooth for cyclic data
+              paste0(terms_sub, collapse = " + ")
+            )
+        } else {m_form <- as.formula("flowering ~ s(doy, bs = 'cc', k = 25)")}
+    
     return(m_form)
   } else {return(m_form)}
+  }
 }
 
 #' determine whether we should model spatial autocorrelation

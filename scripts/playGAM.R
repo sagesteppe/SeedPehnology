@@ -3,13 +3,14 @@ library(tidyverse)
 library(terra)
 library(mgcv)
 
-setwd('~/Documents/SeedPhenology/scripts')
+setwd('/media/steppe/hdd/SeedPhenology/scripts')
+#setwd('~/Documents/SeedPhenology/scripts')
 source('functions.R')
 
 f <- paste0('../results/PresAbs/', list.files('../results/PresAbs', pattern = 'shp$'))
 spp <- lapply(f, st_read, quiet = TRUE) |>
   bind_rows() |>
-  select(-accessr) #|>  
+  select(-accessr) |>  
   pivot_longer(cols = doy:cessAbs, values_to = 'doy', names_to = 'flowering') |> 
   mutate(flowering = if_else(flowering == 'doy', 1, 0)) # don't convert to factor
 
@@ -29,12 +30,15 @@ spp <- terra::extract(preds, spp, bind = TRUE) |>
       doy:cti, ~ ifelse(is.na(.x), mean(.x, na.rm = TRUE), .x))) 
 
 splicies <- split(spp, f = spp$scntfcnm)
-splicies <- Filter(function(y) nrow(y) >= 50, splicies)
-# lapply(X = splicies[40:50], modeller) 
+names(splicies)
+lapply(X = splicies[142], modeller) 
 
 
-f <- file.path('../results/models', list.files('../results/models'))
-model <- readRDS(f[41])
+
+
+# f <- file.path('../results/models', list.files('../results/models')) 
+
+model <- readRDS(f[122])
 
 plot(model)
 abline(h=0)
@@ -45,17 +49,37 @@ spp <- splicies[[which( gsub('.rds', '', basename(f[41])) ==
                           gsub(' ', '_', names(splicies))  )]]
 
 # play with prediction
+splicies <- bind_rows(splicies)
+head(splicies)
+spat_predict(f[107], spp = splicies)
 
-spat_predict <- function(x){
+
+sdm_surfs <- list.files('../data/spatial/PhenPredSurfaces') # need to align rasters
+focal_surf <- terra::rast(
+  file.path( '../data/spatial/PhenPredSurfaces', sdm_surfs[1])
+)
+preds <- project(preds, crs(focal_surf))
+
+spat_predict(f[107], spp = splicies)
+
+#' predict a gam into space and time
+#' @param x a vector of paths to models
+#' @param spp a dataframe of all species and variables which are relevant to prediction.
+spat_predict <- function(x, spp){
   
   # identify the taxon we are working with. 
-  taxon <- gsub('.rds', '', basename(f[41]))
+  taxon <- gsub('.rds', '', basename(x))
+  
+  # read in the fitted model. 
+  model <- readRDS(x)
   
   #identify independent variables
   terms <- unlist(strsplit(split = ' [+] ', as.character(model$terms[[3]][[2]]))) 
   terms <- terms[ grep('[+]', terms, invert = TRUE)]
-  terms <- c(terms, 'doy')
-  spp_range <- sf::st_drop_geometry(spp[spp$flowering==1,terms])
+  if(all(terms==1)){terms <- 'doy'} else {terms <- c(terms, 'doy')}
+  
+  spp_f <- spp[spp$scntfcnm== gsub('_', ' ', taxon),]
+  spp_range <- sf::st_drop_geometry(spp_f[spp_f$flowering==1, terms])
 
   #create prediction grid of variables. 
   dfParameterValues <- data.frame(
@@ -78,18 +102,27 @@ spat_predict <- function(x){
   
   # identify first day with > 5% probability of flowering, peak, and last day with >10% flowering
   # predict between these days onwards
-  if({lowerDOY <- min(pred_df[pred_df$fit > 0.55, ]$doy) } < 0){lowerDOY <- 0} else {
+  if({lowerDOY <- min(pred_df[pred_df$fit > 0.6, ]$doy) } < 0){lowerDOY <- 0} else {
     lowerDOY <- floor(lowerDOY)}
-  if({upperDOY <- max(pred_df[ pred_df$fit > 0.55, ]$doy) } > 365){upperDOY <- 365} else { 
+  if({upperDOY <- max(pred_df[ pred_df$fit > 0.60, ]$doy) } > 365){upperDOY <- 365} else { 
     upperDOY <- ceiling(upperDOY)}
    
    # predict only on these days. 
    timeStamps <- round(seq(lowerDOY, upperDOY, by = 14)) # biweekly time stamps for prediction
    
    # predict only in areas with suitable habitat for the species. 
-   sdm_surfs <- list.files('../data/raw/PhenPredSurfaces')
-   focal_surf <- terra::rast( sdm_surfs[ grep(taxon, sdm_surfs) ] )
-   preds_sub <- terra::mask(preds, focal_surf)
+   sdm_surfs <- list.files('../data/spatial/PhenPredSurfaces')
+   focal_surf <- terra::rast(
+     file.path( '../data/spatial/PhenPredSurfaces',
+                sdm_surfs[ grep(taxon, sdm_surfs)])
+     )
+   preds_sub <-    sdm_surfs <- list.files('../data/spatial/PhenPredSurfaces')
+   focal_surf <- terra::rast(
+     file.path( '../data/spatial/PhenPredSurfaces',
+                sdm_surfs[ grep(taxon, sdm_surfs)])
+   )
+   focal_surf <- resample(focal_surf, preds)
+   preds_sub <- terra::crop(preds, focal_surf, mask = TRUE)
    
    # create raster layers for each time point. - this is memory hungry, so each raster
    # will be written to disk, and then these will be reloaded. 
@@ -121,13 +154,18 @@ spat_predict <- function(x){
      msk <- terra::ifel(time_pred < 0.01, NA, time_pred)
      time_pred <- terra::mask(time_pred, msk)
      
-     NACount <- freq(is.na(time_pred))
-     NACount <- NACount[ NACount$value==1, 'count'] / (dim(time_pred)[1]*dim(time_pred)[2])
+     # determine how many cells are suitable habitat. 
+     total_habitat <- sum(focal_surf)
+     NACount <- freq(is.na(time_pred)) # if more than 95% of cells are unlikely to be
+     # in flower do not write raster for that date.
+     message(total_habitat)
+     NACount <- NACount[ NACount$value==1, 'count'] / total_habitat
+     message(NACount)
      
-     if(NACount < 0.99){
+     if(NACount < 0.95){
        terra::writeRaster(time_pred, 
                           paste0(p1, '/doy_preds/', timeStamps[[i]],'.tif'), overwrite = T)
-     } else {message('> 99% of Cells are NA, not writing layer ',  i, ' to disk.')}
+     } else {message('> 95% of Cells are NA, not writing layer ',  i, ' to disk.')}
      
      rm(time_pred)
      terra::tmpFiles(current = FALSE, orphan = TRUE, old = TRUE, remove = TRUE)
@@ -160,21 +198,6 @@ plot(p4)
 
 
 
-
-# write 9 rasters, 1) FIRST , 2) PEAK, 3) LAST, and each with it's upper and lower SE. 
-model
-
-
-f[25] # bidens frondosa. 
-
-
-
-ggplot(pred_df, aes(x = doy, y = fit)) + 
-  geom_point() + 
-  geom_smooth(se = FALSE) + 
-  geom_smooth(aes(y = SE_low), se = FALSE, color = 'red') + 
-  geom_smooth(aes(y = SE_high), se = FALSE, color = 'red') + 
-  theme_classic()
 
 # https://stacyderuiter.github.io/s245-notes-bookdown/gams-generalized-additive-models.html
 # notes on GAMS!!
