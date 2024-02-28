@@ -779,6 +779,10 @@ orderLoad <- function(path){
   return(doy_stack)
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 0e328ec12b3f8c31914949efa392649985ff55d6
 #' predict a gam into space and time
 #' @param x a vector of paths to models
 #' @param spp a dataframe of all species and variables which are relevant to prediction.
@@ -827,7 +831,11 @@ spat_predict <- function(x, spp){
   # if the upperdoy is greater than 1 month after the last observed flowering record, cull it to +31 days.
   
   # predict only on these days. 
+<<<<<<< HEAD
   timeStamps <- round(seq(lowerDOY, upperDOY, by = 7)) # biweekly time stamps for prediction
+=======
+  timeStamps <- round(seq(lowerDOY, upperDOY, by = 14)) # biweekly time stamps for prediction
+>>>>>>> 0e328ec12b3f8c31914949efa392649985ff55d6
   
   # predict only in areas with suitable habitat for the species. 
   sdm_surfs <- list.files('../data/spatial/PhenPredSurfaces')
@@ -922,16 +930,36 @@ spat_summarize <- function(x){
   v_peak <- colnames(v_mat)[max.col(replace(v_mat, is.na(v_mat), -Inf), ties.method="last")]
   peak_flr <- terra::setValues(focal_surf, values = v_peak)
   rm(v_peak, v_mat)
+
+  pred_stack <- orderLoad(paste0(p1, '/doy_preds/'))
   
+  # this identifies a 'peak' date. 
+  peak_date <- terra::app(pred_stack, which.max) # peak flower. 
+  peak_flr <- terra::subst(peak_date, 
+                           from = 1:dim(pred_stack)[3], to = names(pred_stack)) 
+  
+  # this isolates an effective start date.  
+  start_date <- terra::app(pred_stack, which.min) # start date.  
+  start_flr <- terra::subst(start_date, 
+                            from = 1:dim(pred_stack)[3], to = names(pred_stack)) 
+  
+  # this isolates an effective end of flowering date. 
+  v_mat <- terra::values(pred_stack)
+  v <- colnames(v_mat)[ max.col(!is.na(v_mat), ties.method = 'last') ]
+  end_flr <- terra::setValues(focal_surf, values = v)
+  rm(v_mat, v)
+
   flr_events <- c(start_flr, peak_flr, end_flr)
   names(flr_events) <- c('Initiation', 'Peak', 'Cessation')
   flr_events <- terra::mask(flr_events, focal_surf)
   flr_events <- terra::trim(flr_events)
   
-  
   p1 <- dirname(x)
   dir.create(file.path(p1, 'summary_doys'), showWarnings = FALSE)
   writeRaster(flr_events, file.path(p1, 'summary_doys', paste0(taxon, '.tif')), overwrite = T)
+  dir.create(file.path(p1, 'summary_doys'), showWarnings = FALSE)
+  writeRaster(flr_events, file.path(p1, 'summary_doys', paste0(taxon, '.tif')))
+  
   terra::tmpFiles(current = FALSE, orphan = TRUE, old = TRUE, remove = TRUE)
   
 }

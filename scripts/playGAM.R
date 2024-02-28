@@ -67,5 +67,3 @@ p <- '../data/processed/timestamps'
 acsp <- rast(file.path(p, 'Achnatherum_occidentale/summary_doys/Achnatherum_occidentale.tif'))
 plot(acsp, col = 'red')
 plot(acsp,  col = c('red', 'yellow', 'green'))
-
-
