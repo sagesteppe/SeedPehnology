@@ -30,18 +30,12 @@ spp <- terra::extract(preds, spp, bind = TRUE) |>
       doy:cti, ~ ifelse(is.na(.x), mean(.x, na.rm = TRUE), .x))) 
 
 splicies <- split(spp, f = spp$scntfcnm)
-lapply(X = splicies[8], modeller) 
+# lapply(X = splicies, modeller) 
 
 f1 <- file.path('../results/models', list.files('../results/models'))
 
-plot(model)
-abline(h=0)
-gam.check(model)
-summary(model)
-
 # play with prediction
 splicies <- bind_rows(splicies)
-head(splicies)
 
 sdm_surfs <- list.files('../data/spatial/PhenPredSurfaces') # need to align rasters
 focal_surf <- terra::rast(
@@ -49,157 +43,29 @@ focal_surf <- terra::rast(
 )
 preds <- project(preds, crs(focal_surf))
 
-#' predict a gam into space and time
-#' @param x a vector of paths to models
-#' @param spp a dataframe of all species and variables which are relevant to prediction.
-spat_predict <- function(x, spp){
-  
-  # identify the taxon we are working with. 
-  taxon <- gsub('.rds', '', basename(x))
-  
-  # read in the fitted model. 
-  model <- readRDS(x)
-  
-  #identify independent variables
-  terms <- unlist(strsplit(split = ' [+] ', as.character(model$terms[[3]][[2]]))) 
-  terms <- terms[ grep('[+]', terms, invert = TRUE)]
-  if(all(terms==1)){terms <- 'doy'} else {terms <- c(terms, 'doy')}
-  
-  spp_f <- spp[spp$scntfcnm== gsub('_', ' ', taxon),]
-  spp_range <- sf::st_drop_geometry(spp_f[spp_f$flowering==1, terms])
+remove <- setdiff(gsub('[.]rds', '', basename(f1)), gsub('[.]tif', '', sdm_surfs))
+f1 <- f1[ ! grepl(paste(remove, collapse = '|'), f1) ]
+splicies <- bind_rows(splicies)
+lapply(f1, spat_predict, spp = splicies)
 
-  #create prediction grid of variables. 
-  dfParameterValues <- data.frame(
-    ParameterName = colnames(spp_range),
-    seqFrom = apply(spp_range, MARGIN = 2, FUN = min),
-    seqTo = apply(spp_range, MARGIN = 2, FUN = max),
-    lOut = rep(15, times = ncol(spp_range)))
-  
-  pred_df <- setNames(
-    expand.grid(
-      data.frame( 
-        apply(dfParameterValues[,c("seqFrom", "seqTo", 'lOut')], 1,
-              function(x) seq(from = x['seqFrom'], to = x['seqTo'], length.out = x['lOut']))
-      )
-    ), dfParameterValues$ParameterName
-  )
-  
-  # fit model
-   pred_df$fit <- predict(model, newdata = pred_df, type = 'response', se = F)
-  
-  # identify first day with > 0.6% probability of flowering, and last day with >.6% flowering
-  # predict between these days onwards
-  if({lowerDOY <- min(pred_df[pred_df$fit > 0.55, ]$doy) } < 0){lowerDOY <- 0} else {
-    lowerDOY <- floor(lowerDOY)}
-  if({upperDOY <- max(pred_df[ pred_df$fit > 0.6, ]$doy) } > 365){upperDOY <- 365} else { 
-    upperDOY <- ceiling(upperDOY)}
-   
-   # if the upperdoy is greater than 1 month after the last observed flowering record, cull it to +31 days.
-   
-   # predict only on these days. 
-   timeStamps <- round(seq(lowerDOY, upperDOY, by = 14)) # biweekly time stamps for prediction
-   
-   # predict only in areas with suitable habitat for the species. 
-   sdm_surfs <- list.files('../data/spatial/PhenPredSurfaces')
-   focal_surf <- terra::rast(
-     file.path( '../data/spatial/PhenPredSurfaces',
-                sdm_surfs[ grep(taxon, sdm_surfs)])
-     )
+# lomatium grayi, peak is less than initiation
+# penstemon eatonii, not all cells covered
 
-   focal_surf <- resample(focal_surf, preds)
-   preds_sub <- terra::crop(preds, focal_surf, mask = TRUE)
-   
-   # create raster layers for each time point. - this is memory hungry, so each raster
-   # will be written to disk, and then these will be reloaded. 
-   r1 <- rast(preds_sub)[[1]]
-   names(r1) <- 'doy'
-   p1 <- file.path('../data/processed/timestamps', taxon)
-   
-   dir.create(file.path(p1, 'doy_constants'), showWarnings = FALSE, recursive = T)
-   for (i in seq_along(1:length(timeStamps))){
-     
-     r_fill <- terra::setValues(r1, timeStamps[i])
-     r_fill <- terra::mask(r_fill, preds_sub[[1]])
-     
-     terra::writeRaster(r_fill, paste0(p1, '/doy_constants/', timeStamps[[i]],'.tif'), overwrite = T)
-     rm(r_fill) 
-   }
-   
-   doy_stack <- orderLoad(paste0(p1, '/doy_constants/'))
-   
-   # predict the probability of the species flowering at each time point
-   dir.create(file.path(p1, 'doy_preds'), showWarnings = FALSE)
-   
-   # determine how many cells are suitable habitat. # use this to determine
-   # whether it's worth writing out that time stamp
-   n_cells <- (dim(focal_surf)[1] * dim(focal_surf)[2])
-   prop_pop <- freq(is.na(focal_surf))$count[1]  / n_cells 
-   
-   for (i in seq_along(1:length(timeStamps))){
-     
-     space_time <- c(preds_sub, doy_stack[[i]])
-     time_pred <- terra::predict(space_time, model, type="response") 
-     
-     names(time_pred) <- timeStamps[[i]]
-     msk <- terra::ifel(time_pred < 0.5, NA, time_pred)
-     time_pred <- terra::mask(time_pred, msk)
-     
-     populated <- freq(is.na(time_pred))
-     populated <- populated[ populated$value==0, 'count']
-     if(length(populated)==0){populated<-1}
-     
-     if(populated >= ((n_cells * prop_pop) * 0.05) ){
-       terra::writeRaster(time_pred, 
-                          paste0(p1, '/doy_preds/', timeStamps[[i]],'.tif'), overwrite = T)
-     } else {message('> 95% of Cells are NA, not writing layer ',  i, ' to disk.')}
-     
-     rm(time_pred)
-     terra::tmpFiles(current = FALSE, orphan = TRUE, old = TRUE, remove = TRUE)
-   }
-   
-   pred_stack <- orderLoad(paste0(p1, '/doy_preds/'))
-   
-}
+# erigeron bloomeri, not all cells recovered for initiation and peak
+# euthamnia occidentalis, not all cells recovered for initiation and peak
 
-summary( readRDS(f1[8]) )
-spat_predict(f1[127], spp = splicies)
+f <- list.files('../data/processed/timestamps', recursive = T)
+f <- paste0('../data/processed/timestamps/',  f[grep('doy_preds', f)])
+f <- paste0(unique(dirname(f)), '/')
 
-# isolate the initiation of flowering (10%), peak (max value), and cessation (90%) for each cell. 
+lapply(f, spat_summarize)
 
-focal_surf <- terra::rast(
-  file.path( '../data/spatial/PhenPredSurfaces', 'Achnatherum_speciosum.tif'))
-focal_surf <- resample(focal_surf, preds)
-rm(focal_surf)
-
-p1 <- file.path('../data/processed/timestamps', 'Erigeron_bloomeri')
-pred_stack <- orderLoad(paste0(p1, '/doy_preds/'))
-plot(pred_stack)
-out <- values(pred_stack)
+plot(flr_events, col = c('red', 'yellow', 'green', 'purple', 'brown', 'cyan', 'black'))
 
 
-
-
-
-
-
-# this identifies a 'peak' date. 
-pred_stack <- ifel(is.na(pred_stack), -999, pred_stack) # we need to remove ocean NA's
-p1 <- terra::app(pred_stack, which.max) # peak flower. 
-p2 <- terra::subst(p1, from = 1:dim(pred_stack)[3], to = names(pred_stack)) 
-
-plot(pred_stack)
-plot(p2, col = c('red', 'blue', 'green', 'purple', 'brown'))
-
-# this isolates an effective start date.  
-pred_stack <- ifel(pred_stack < 0, 999, pred_stack)
-p3 <- terra::app(pred_stack, which.min) # start date.  
-p4 <- terra::subst(p3, from = 1:dim(pred_stack)[3], to = names(pred_stack)) 
-plot(p4)
-
-
-
-
-# https://stacyderuiter.github.io/s245-notes-bookdown/gams-generalized-additive-models.html
-# notes on GAMS!!
+p <- '../data/processed/timestamps'
+acsp <- rast(file.path(p, 'Achnatherum_occidentale/summary_doys/Achnatherum_occidentale.tif'))
+plot(acsp, col = 'red')
+plot(acsp,  col = c('red', 'yellow', 'green'))
 
 
