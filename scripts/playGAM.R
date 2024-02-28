@@ -64,6 +64,6 @@ plot(flr_events, col = c('red', 'yellow', 'green', 'purple', 'brown', 'cyan', 'b
 
 
 p <- '../data/processed/timestamps'
-acsp <- rast(file.path(p, 'Achnatherum_occidentale/summary_doys/Achnatherum_occidentale.tif'))
+acsp <- rast(file.path(p, 'Lasthenia_gracilis/summary_doys/Lasthenia_gracilis.tif'))
 plot(acsp, col = 'red')
-plot(acsp,  col = c('red', 'yellow', 'green'))
+plot(acsp, col = c('red', 'yellow', 'green', 'purple', 'brown', 'cyan', 'black'))

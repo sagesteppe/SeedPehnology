@@ -831,11 +831,8 @@ spat_predict <- function(x, spp){
   # if the upperdoy is greater than 1 month after the last observed flowering record, cull it to +31 days.
   
   # predict only on these days. 
-<<<<<<< HEAD
-  timeStamps <- round(seq(lowerDOY, upperDOY, by = 7)) # biweekly time stamps for prediction
-=======
   timeStamps <- round(seq(lowerDOY, upperDOY, by = 14)) # biweekly time stamps for prediction
->>>>>>> 0e328ec12b3f8c31914949efa392649985ff55d6
+  timeStamps <- round(seq(lowerDOY, upperDOY, by = 14)) # biweekly time stamps for prediction
   
   # predict only in areas with suitable habitat for the species. 
   sdm_surfs <- list.files('../data/spatial/PhenPredSurfaces')
