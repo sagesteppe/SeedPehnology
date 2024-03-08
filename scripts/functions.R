@@ -28,7 +28,7 @@ specimen_sampler <- function(x, date, basepts, mindist, overpts, ...){
                   geopoint.lat > 1) |> # sensing data comes on line here
     dplyr::arrange(datecollected)
   
-  if(nrow(text_result) > 2){
+  if(nrow(text_result) > 5){
   
   media_result <- ridigbio::idig_search_media(
     rq = list(scientificname = x), mq = TRUE) |>
@@ -544,7 +544,7 @@ visual_review_flagger <- function(x, probs){
 #' quick and dirty drop far off records and close dupes - see other repos for proper drops. 
 rec_selec <- function(x){
   
-  x <- st_transform(x, 5070)
+  x <- sf::st_transform(x, 5070)
   nf <-  sf::st_nearest_feature(x)
   y <- x[ as.numeric(sf::st_distance(x, x[nf,], by_element = T) ) < 80000 , ]
   # remove far off records.
@@ -779,10 +779,6 @@ orderLoad <- function(path){
   return(doy_stack)
 }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 0e328ec12b3f8c31914949efa392649985ff55d6
 #' predict a gam into space and time
 #' @param x a vector of paths to models
 #' @param spp a dataframe of all species and variables which are relevant to prediction.

@@ -424,7 +424,7 @@ lapply(splicies[2:4], ince_writer, bs = 20) # 41, 40? 42
 
 Generate Phenology absences for start and ends of GAM curve for records.
 
-```{r}
+```{r, eval = F}
 
 p <- '../results/initation_cessation_tables'
 tables <- lapply(file.path(p, list.files(path = p)), read.csv)
@@ -436,8 +436,7 @@ f <- gsub('.shp', '', list.files('../results/PresAbs', pattern = 'shp$'))
 specimens <- st_read('../data/processed/training/presences.shp', quiet = TRUE ) %>% 
   bind_rows()
 pca1 <- terra::rast('../results/spatial/gddPCA.tif')
-specimens <- terra::e
-xtract(
+specimens <- terra::extract(
   terra::rast('../results/spatial/gddPCA.tif'), specimens, bind = TRUE) |>
   st_as_sf() %>% 
   drop_na(PC1)
@@ -448,3 +447,84 @@ specimens <- filter(specimens, scntfcnm %in% gsub('_', ' ', tables$scntfcnm))
 specimens <- split(specimens, f = specimens$scntfcnm)
 lapply(specimens, pheno_abs_writer)
 ```
+
+
+
+
+#### Perform scoring for lowest priority species
+some species were skipped in the above steps...
+
+```{r}
+
+scored <- bind_rows(
+  read.csv('../data/processed/high_priority_sheets-scored.csv'),
+  read.csv('../data/processed/second_phenology_review-scored.csv'), 
+  read.csv('../data/processed/low_priority_sheets-scored.csv'), 
+  read.csv('../data/processed/troublesomeSpecies-scored.csv')
+  ) %>% 
+  mutate(
+    Anthesis = if_else(is.na(Anthesis), 999, Anthesis)
+    ) %>% 
+  select(-comments)
+
+specimens <- st_read('../data/processed/training/presences.shp', quiet = TRUE ) %>% 
+  filter(! scntfcnm %in% scored[scored$Anthesis %in% c(0, 999), 'accessr'] )
+
+```
+
+```{r}
+modelled <- list.files('/media/steppe/hdd/SeedPhenology/data/processed/timestamps')
+
+last_species <- read.csv('../data/raw/2024sos_species.csv') %>% 
+  mutate(across(.cols = everything(.), ~ na_if(., ''))) %>% 
+  unite(taxon, genus:infraspecies, na.rm = TRUE) %>% 
+  distinct(taxon) %>% 
+  filter(! taxon %in% c(modelled))
+
+speci1 <- filter(specimens, scntfcnm %in% gsub('_', ' ', last_species$taxon))
+table(speci1$scntfcnm) # these need modelled - we already have the data
+
+last_species <- last_species %>% 
+  mutate(taxon = gsub('_', ' ', taxon)) %>% 
+  filter( ! taxon  %in% c(speci1$scntfcnm)) %>% 
+  arrange(taxon)
+
+specs1 <- lapply(last_species$taxon, specimen_sampler, date = '1981-01-01')
+
+last_species[ lapply(specs1, typeof) == 'character' , ]
+
+specs1 <- specs1[ lapply(specs1, typeof) == 'list' ] |> bind_rows()
+specs1 <- mutate(specs1, scntfcn = str_to_sentence(scientificname)) 
+specs1 <- split(specs1, f = specs1$scntfcn)
+specs1ABC <- lapply(specs1[1:24], rec_selec)
+specs1DEF <- lapply(specs1[25:26], rec_selec)
+specs1EFG <- lapply(specs1[28:80], rec_selec)
+
+specs1 <- c(specs1ABC, specs1DEF, specs1EFG)
+specs1 <- bind_rows(specs1)
+
+dir.create('../data/processed/lowest_priority_sheets')
+sf::st_write(specs1, 
+             '../data/processed/lowest_priority_sheets/lowest_priority_sheets.shp', 
+             quiet = TRUE, append = F)
+```
+
+
+
+```{r write out conflicted things for idigbio team}
+
+read.csv('../data/processed/high_priority_sheets-scored.csv')
+
+scored <- bind_rows(
+  read.csv('../data/processed/high_priority_sheets-scored.csv'),
+  read.csv('../data/processed/second_phenology_review-scored.csv'), 
+  read.csv('../data/processed/low_priority_sheets-scored.csv'), 
+  read.csv('../data/processed/troublesomeSpecies-scored.csv')
+  ) %>% 
+  filter(str_detect(accessr, 'prc-symbiota')) %>% 
+  select(-Anthesis, -comments) %>% 
+  arrange(scntfcnm)
+
+write.csv(scored, '../data/raw/prc_symbiota.csv')
+```
+
