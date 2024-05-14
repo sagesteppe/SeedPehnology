@@ -4,6 +4,7 @@ Estimating the initiation of flowering, peak flower, and the cessation of flower
 Considerable effort has been directed towards understanding how climate change affects the phenology of species.
 These studies have shown causal links between a number of climate metrics, and generally, advanced initiation of phenological events, which has resulted in the generation of a variety of theory and spatial data which serve as independent variables. 
 However, these observational studies and manipulative experiments have generally been limited to a few dozen species in only one to a couple populations, or when using herbarium sheets from many populations than only a few species. 
+Counter intuitively, for the plant species analyzed to date, their responses to warming have been idiosyncratic preventing the generalization of results across, clades, most functional groups, and according the need for continued species specific modelling. 
 Hence their findings have seldom been applied to the documentation of phenological traits for species in general. 
 
 A component missing from most of these studies has been the utilization of spatial covariates in the workflows and statistics used to model phenological processes. 
@@ -45,9 +46,21 @@ Points in clusters which had a nearest geographic neighbor in another cluster ha
 All independent variables were extracted to the dependent variables, and if a value for an independent variable was missing - which was not uncommon for Soil Bulk Density, where the modellers excluded the fringes of several vernally wet playas - it was imputed as the mean of the variable for the species. 
 All independent variables then underwent feature selection using the Recursive Feature Elimination (rfe) with 10 Cross-Validations (CV) folds, 5 replicates, and from 1-10 variables using caret (@kuhn).
 The remaining variable(s) were used as covariates with DOY always included in the models. 
-A gamm was fit using presence/absence of flowering as a response, as well as gamm's with error structure of gaussian, spherical, and exponential variograms, with REML (@package). 
-All models were subjected to model selection, and the top model determined via AUC scores (MuMIn).. 
+A GAMM was fit using presence/absence of flowering as a response, as well as GAMM's with error structure of gaussian, spherical, and exponential variograms, with REML (@package). 
+All models were subjected to model selection, and the top model determined via AUC scores (MuMIn). 
 
 ## Surfaces
 
-Convex hulls were drawn around the geographic extent of the species, and a prediction was generated for each DOY with greater than 5% probability of flowering... 
+Each species top model was used to determine start and end dates (DOY) for which flowering was likely to occur, while initially omitting space as an explicit variable.   
+These predicted start and end dates were used to constrain the number of models predicted onto raster surfaces at each time point, a computationally intensive process. 
+This model was fit using an initial prediction matrix spanning the range of all independent variables at 15 points across each of their ranges, based on minima and maxima observed in the dependent data. 
+The first DOY with a > 55% probability of flowering was used as the start date, and the lat DOY with a >60% probability of flowering, were used as constraints for spatial modelling. 
+The higher tolerance for flowering cessation was used because the distribution of flowering generally follows a LONG TAIL distribution. 
+
+Models were predicted onto rasters at biweekly (14 day) intervals from the start to end DOY, in areas which Species Distribution Models predicted as having a high probability (> 60%???) of suitable habitat (Benkendorf et al. 202X). 
+Rasters which had fewer than 5% of their total cells classified as having a >50% probability of flowering were subsequently discarded.
+
+## Interpretation 
+
+
+

@@ -472,7 +472,7 @@ specimens <- st_read('../data/processed/training/presences.shp', quiet = TRUE ) 
 
 ```
 
-```{r}
+```{r gather lowest priority sheets, eval = F}
 modelled <- list.files('/media/steppe/hdd/SeedPhenology/data/processed/timestamps')
 
 last_species <- read.csv('../data/raw/2024sos_species.csv') %>% 
@@ -482,7 +482,7 @@ last_species <- read.csv('../data/raw/2024sos_species.csv') %>%
   filter(! taxon %in% c(modelled))
 
 speci1 <- filter(specimens, scntfcnm %in% gsub('_', ' ', last_species$taxon))
-table(speci1$scntfcnm) # these need modelled - we already have the data
+table(speci1$scntfcnm) # these need modeled - we already have the data
 
 last_species <- last_species %>% 
   mutate(taxon = gsub('_', ' ', taxon)) %>% 
@@ -508,6 +508,65 @@ sf::st_write(specs1,
              '../data/processed/lowest_priority_sheets/lowest_priority_sheets.shp', 
              quiet = TRUE, append = F)
 ```
+
+
+obtain species which were missing from southwest areas
+
+```{r}
+modelled <- list.files('/media/steppe/hdd/SeedPhenology/data/processed/timestamps')
+last_species <- read.csv('../data/raw/2024sos_species.csv') %>% 
+  mutate(across(.cols = everything(.), ~ na_if(., ''))) %>% 
+  unite(taxon, genus:infraspecies, na.rm = TRUE) %>% 
+  distinct(taxon) %>% 
+  filter(! taxon %in% c(modelled))
+
+specs1 <- st_read('../data/processed/lowest_priority_sheets/lowest_priority_sheets.shp', quiet = TRUE) %>% 
+  distinct(scntfcnm) %>% 
+  pull(scntfcnm) 
+specs1 <- gsub(' ', '_', specs1)
+
+fixed <- read.csv('../data/raw/2024sos_species-FIXED.csv') %>% 
+  mutate(across(.cols = everything(.), ~ na_if(., ''))) %>% 
+  unite(taxon, genus:infraspecies, na.rm = TRUE) %>% 
+  mutate(taxon = str_trim(taxon)) %>% 
+  distinct(taxon)%>% 
+  filter(! taxon %in% c(modelled, specs1))
+
+last_species <- fixed %>% 
+  mutate(taxon = gsub('_', ' ', taxon)) %>% 
+  arrange(taxon)
+
+specs1 <- lapply(last_species$taxon, specimen_sampler, date = '1981-01-01')
+
+specs1 <- specs1[ lapply(specs1, typeof) == 'list' ] |> bind_rows()
+specs1 <- mutate(specs1, scntfcn = str_to_sentence(scientificname)) 
+specs1 <- split(specs1, f = specs1$scntfcn)
+specs2 <- bind_rows(lapply(specs1[1:11], rec_selec))
+specs3 <- bind_rows(lapply(specs1[13:34], rec_selec))
+d <- st_read('../data/processed/lowest_priority_sheets/lowest_priority_sheets.shp', quiet = TRUE)
+
+specs <- bind_rows(specs2, specs3) |>
+  rename(scntfcnm = scientificname, accessr = accessuri, dtcllct = datecollected, collctr = collector )
+specs1 <- bind_rows(specs, d) %>% 
+  arrange(scntfcnm)
+dir.create('../data/processed/lowest_priority_sheets')
+sf::st_write(specs1, 
+             '../data/processed/lowest_priority_sheets/lowest_priority_sheets.shp', 
+             quiet = TRUE, append = F)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

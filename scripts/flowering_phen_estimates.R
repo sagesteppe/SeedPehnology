@@ -9,7 +9,7 @@ scored <- bind_rows(
   read.csv('../data/processed/second_phenology_review-scored.csv'), 
   read.csv('../data/processed/low_priority_sheets-scored.csv'), 
   read.csv('../data/processed/troublesomeSpecies-scored.csv')
-) %>% 
+) %>%            
   mutate(
     Anthesis = if_else(is.na(Anthesis), 999, Anthesis)
   ) %>% 

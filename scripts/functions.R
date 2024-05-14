@@ -781,7 +781,7 @@ orderLoad <- function(path){
 
 #' predict a gam into space and time
 #' @param x a vector of paths to models
-#' @param spp a dataframe of all species and variables which are relevant to prediction.
+#' @param spp a data frame of all species and variables which are relevant to prediction.
 spat_predict <- function(x, spp){
   
   # identify the taxon we are working with. 
@@ -817,8 +817,8 @@ spat_predict <- function(x, spp){
   # fit model
   pred_df$fit <- predict(model, newdata = pred_df, type = 'response', se = F)
   
-  # identify first day with > 0.6% probability of flowering, and last day with >.6% flowering
-  # predict between these days onwards
+  # identify first day with > 0.55% probability of flowering, and last day with > 60% flowering
+  # predict between these days on wards
   if({lowerDOY <- min(pred_df[pred_df$fit > 0.55, ]$doy) } < 0){lowerDOY <- 0} else {
     lowerDOY <- floor(lowerDOY)}
   if({upperDOY <- max(pred_df[ pred_df$fit > 0.6, ]$doy) } > 365){upperDOY <- 365} else { 
