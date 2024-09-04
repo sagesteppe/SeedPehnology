@@ -3,9 +3,9 @@ library(tidyverse)
 library(terra)
 library(mgcv)
 
-setwd('/media/steppe/hdd/SeedPhenology/scripts')
+setwd('/media/steppe/hdd/SeedPhenology/scripts') 
 #setwd('~/Documents/SeedPhenology/scripts')
-source('functions.R')
+source('functions.R') 
 
 f <- paste0('../results/PresAbs/', list.files('../results/PresAbs', pattern = 'shp$'))
 spp <- lapply(f, st_read, quiet = TRUE) |>
@@ -13,6 +13,9 @@ spp <- lapply(f, st_read, quiet = TRUE) |>
   select(-accessr) |>  
   pivot_longer(cols = doy:cessAbs, values_to = 'doy', names_to = 'flowering') |> 
   mutate(flowering = if_else(flowering == 'doy', 1, 0)) # don't convert to factor
+
+filter(spp, flowering == 1) |>
+  nrow()
 
 # now we can import variables which we believe correlate with flowering. 
 p <- '../data/spatial/processed/'

@@ -1,16 +1,21 @@
 # SeedPhenology
-Estimating the initiation of flowering, peak flower, and the cessation of flowering using herbarium specimens to inform wildland seed collection in the Western United States. 
 
-Considerable effort has been directed towards understanding how climate change affects the phenology of species.
-These studies have shown causal links between a number of climate metrics, and generally, advanced initiation of phenological events, which has resulted in the generation of a variety of theory and spatial data which serve as independent variables. 
-However, these observational studies and manipulative experiments have generally been limited to a few dozen species in only one to a couple populations, or when using herbarium sheets from many populations than only a few species. 
-Counter intuitively, for the plant species analyzed to date, their responses to warming have been idiosyncratic preventing the generalization of results across, clades, most functional groups, and according the need for continued species specific modelling. 
-Hence their findings have seldom been applied to the documentation of phenological traits for species in general. 
+Changes in the phenology of species, the timing of life history events, are one of the most common and pronounced responses to climate change. 
+Considerable effort has been directed towards exploring the causal links between climate change and species phenology (@tang2016emerging). 
+This research has shown causal links between numerous shifting climate metrics, and generally the advanced initiation of phenological events of vegetation as a whole (@parmesan2003globally). 
+Given the importance of phenology to biodiversity, and the ready identification of causal agents, many meteorological explanatory variables have been produced, as well as remotely sensed vegetation attributes linked to phenology, e.g. vegetation stand wide leaf out, and leaf senescence dates @dronova2022remote. 
+Generally studies which tend to treat species as vegetation complexes or communities have found that early season phenophases have tended to advance, while late season events have often become delayed. 
+Counter intuitively, for the individual plant species analyzed to date, their responses to warming have been idiosyncratic preventing the generalization of results across, clades, most functional groups, according the need for continued species specific modelling of phenology (@caradonna2014shifts, @augspurger2020concordance). 
 
-A component missing from most of these studies has been the utilization of spatial covariates in the workflows and statistics used to model phenological processes. 
+However, these observational studies and manipulative experiments have generally been limited to a few dozen species in only one to a couple populations, or when using herbarium sheets from many populations across a spatial domain - than only a few species (@katal2022deep), although some exceptions exist (@park2023complex). 
+
+Hence their findings have seldom been applied to the documentation of phenological traits for many species in general. 
+
+A component missing from most of these studies has been the utilization of spatial covariates in the workflows and statistics used to model phenological processes (@hodgson2011predicting). 
+Not only are responses of individual species idiosyncratic to climate change, the response of populations varies across species ranges, due not only to differing levels of climate change, but to existing broad environmental climate (@park2019herbarium, @park2023complex). 
 We believe that the inability to incorporate spatial terms in the modelling process limits the documentation of phenology to only a handful of populations with similar environmental conditions, rather than reflecting the species as a whole. 
-Generalized Additive Models (GAM's) are often used to document a phenophase because a single model can have their splines fit to both initiation, peak, and cessation of an phase, using a single or multiple independent variables - a limitation of several other methods of estimation.
-The use of independent variable(s) alongside GAM's ability to incorporate an error-correlation structure which accommodates spatial autocorrelation allows them to model the phenological parameters of a species across it's geographic and concomitant environmental range. 
+Generalized Additive Mixed Models (GAMM's) are often used to document a phenophase because a single model can have their splines fit to both initiation, peak, and cessation of an phase, using a single or multiple independent variables - a limitation of several other methods of estimation (@polansky2013generalized).
+The use of independent variable(s) alongside GAMM's ability to incorporate an error-correlation structure which accommodates spatial autocorrelation allows them to model the phenological parameters of a species across it's geographic and concomitant environmental range. 
 
 Hererin we use GAM's to model phenophases, inferred from herbarium specimens and using environmental predictors identified as casual cues of phenology, in space. 
 Our necessity to more accurately understand the phenology of species arose from our goal of native seed collection for both native plant germplasm development, and *ex-situ* conservation. 
@@ -24,18 +29,18 @@ The collection of seeds, which is generally occurring for both many species and 
 Species records were derived from the Symbiota herbarium portal for all years from 1981-2021, these years reflected the climate means used as independent variables (ridigbio). 
 All records were downloaded, and the records in the 2.5% Day of Year (DOY) quantile were manually reviewed. 
 These early records were reviewed because novice collectors, especially with graminoids, may actually collect material without reproductive organs yet reaching anthesis ('in bud').
-The later records were reviewed because collectors may have collections of individuals entirely post-anthesis - a situation very common with certain clades where species are distinguished by characteristics of their fruits (e.g. the Leguminosae). 
+The later records were reviewed because collectors may have collections of individuals entirely post-anthesis - a situation very common with certain clades where species are commonly distinguished by morphological characteristics of their fruits (e.g. the Leguminosae). 
 In both scenarios analysts proceeded towards the mean of the distribution until they encountered 5 consecutive sheets with the desired phenophase.  
 
-Independent variables reflected climate, and landform and soil parameters which modulate soil moisture.
-The climate variables from CHELSA, were 1981-2010 annual means, for Growing Degree Days (GDD) heat sums (at 0°C, 5°C, 10°C), first (gdgfgd) and last (gddlgd) GDD DOY, vapor pressure deficit (vpd), Bio10 (mean daily mean air temperatures of the warmest quarter), and Bio14 (precipitation amount of the driest month).
+Independent variables reflected climate, and landform and soil parameters which modulate soil moisture. 
+The climate variables from CHELSA, were 1981-2010 annual means, for Growing Degree Days (GDD) heat sums (at 0°C, 5°C, 10°C), first (gdgfgd) and last (gddlgd) GDD DOY, vapor pressure deficit (vpd), Bio10 (mean daily mean air temperatures of the warmest quarter), and Bio14 (precipitation amount of the driest month). 
 Soil bulk density, which is shown to reflect the amount of air/water space in soil, was downloaded from SoilGrids. 
 Compound Topographic Index (cti), which describes the potential of an area to accumulate soil moisture via a combination of its landform position, slope, aspect, and size of it's upslope catchment area, was downloaded from geomorpho90m and resampled from 90m to the 250m resolution of the previous data sets. 
 
 GAM's require data on when a species was **not** flowering in order to develop splines for the onset of flowering. 
 Pseudo-floral absences were created using known sites, and their observed phenology. 
 All of the CHELSA climate variables were decomposed using PCA, and the first axis (explaining 98.1% of the variation; 750m x 750m cells) was used as a feature space in a Ward-like hierarchical clustering algorithm which seeks to maximize homogeneity of both the feature and constraint space - here geography (hclustgeo). 
-A suitable number of clusters from the independent variable were automatically selected using kgs (maptree), these clusters were then reanalyzed in light of the constraint space using automatic selection of an alpha parameter which blends the feature and constraint space and re-clustered using hclustgeo (Clustgeo).  
+A suitable number of clusters from the independent variable were automatically selected using kgs (maptree), these clusters were then reanalyzed in light of the constraint space using automatic selection of an alpha parameter which blends the feature and constraint space and re-clustered using hclustgeo (Clustgeo). 
 
 Each cluster had weibull estimates of flowering initiation and cessation modelled, and any DOY within 28 days preceding onset or following cessation were drawn for each group (phenesse). 
 These values were arranged by ascending DOY and joined to the members of the group via decreasing warm to cool values along the PCA axis. 
