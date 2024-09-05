@@ -1,23 +1,25 @@
 # SeedPhenology
 
-Changes in the phenology of species, the timing of life history events, are one of the most common and pronounced responses to climate change. 
-Considerable effort has been directed towards exploring the causal links between climate change and species phenology (@tang2016emerging). 
-This research has shown causal links between numerous shifting climate metrics, and generally the advanced initiation of phenological events of vegetation as a whole (@parmesan2003globally). 
+Changes in a species phenology, the timing of life history events, are one of the most common and pronounced responses to climate change (@parmesan2003globally). 
+Accordingly, considerable effort has been directed towards exploring the causal links between climate change and phenology (@tang2016emerging). 
 Given the importance of phenology to biodiversity, and the ready identification of causal agents, many meteorological explanatory variables have been produced, as well as remotely sensed vegetation attributes linked to phenology, e.g. vegetation stand wide leaf out, and leaf senescence dates @dronova2022remote. 
-Generally studies which tend to treat species as vegetation complexes or communities have found that early season phenophases have tended to advance, while late season events have often become delayed. 
-Counter intuitively, for the individual plant species analyzed to date, their responses to warming have been idiosyncratic preventing the generalization of results across, clades, most functional groups, according the need for continued species specific modelling of phenology (@caradonna2014shifts, @augspurger2020concordance). 
+Generally studies which tend to treat species as vegetation complexes or communities have found that early season phenophases, any noticeable stage in a life cycle, have tended to advance, while late season phenophases have often become delayed @parmesan2003globally. 
+However, for the individual plant species analyzed to date, responses to warming have been idiosyncratic preventing the generalization of results across, clades, most functional groups, resulting in a need for continued species specific modelling of phenology for many applications (@caradonna2014shifts, @augspurger2020concordance). 
+These observational studies and manipulative experiments have generally been limited to a few dozen species in only one to a couple populations, or when using herbarium sheets from many populations across a spatial domain - than only a few species (@katal2022deep), although some exceptions exist (@park2023complex).
 
-However, these observational studies and manipulative experiments have generally been limited to a few dozen species in only one to a couple populations, or when using herbarium sheets from many populations across a spatial domain - than only a few species (@katal2022deep), although some exceptions exist (@park2023complex). 
+Rather than the documentation of trends over time, e.g. flowering initiation advancing by 2.3 days per decade, associated with phenology research in a climate change context the capability to predict the timing of phenophases in an individual year based on realized weather are required for several applications, most notably agriculture and related disciplines. 
+Species specific models have been generated for crop varieties for over half a century (@hodges1990predicting), and increasingly incorporate data sources which seldom exist for wild species, e.g. genes, near real-time remote sensing data of pure stands of individuals, and large amounts of training data capable of training artificial intelligence (@deva2024new, @nagai2020simpler, @gao2021mapping). 
+Additionally, these agricultural systems minimize several environmental factors e.g. the severity of drought, and are operating on lineages breed for consistent windows of phenophases; hence these recent innovations in crop science are difficult to transfer to wildland settings. 
 
-Hence their findings have seldom been applied to the documentation of phenological traits for many species in general. 
-
-A component missing from most of these studies has been the utilization of spatial covariates in the workflows and statistics used to model phenological processes (@hodgson2011predicting). 
-Not only are responses of individual species idiosyncratic to climate change, the response of populations varies across species ranges, due not only to differing levels of climate change, but to existing broad environmental climate (@park2019herbarium, @park2023complex). 
-We believe that the inability to incorporate spatial terms in the modelling process limits the documentation of phenology to only a handful of populations with similar environmental conditions, rather than reflecting the species as a whole. 
+The number of papers attempting to predict flowering events in an individual year, across geographically large portions of a species range are fewer than either of the above use-cases (@hodgson2011predicting). 
+Attempting to model these events are complicated because not only are the responses of individual species idiosyncratic to climate change, the response of populations varies across species ranges, due not only to differing levels of climate change, but to existing broad environmental climate (@park2019herbarium, @park2023complex). 
 Generalized Additive Mixed Models (GAMM's) are often used to document a phenophase because a single model can have their splines fit to both initiation, peak, and cessation of an phase, using a single or multiple independent variables - a limitation of several other methods of estimation (@polansky2013generalized).
 The use of independent variable(s) alongside GAMM's ability to incorporate an error-correlation structure which accommodates spatial autocorrelation allows them to model the phenological parameters of a species across it's geographic and concomitant environmental range. 
+However, the data sets which cover the wide range of species which may be desired to model are few, with herbaria and citizen science initiatives being the two largest sources. 
 
-Hererin we use GAM's to model phenophases, inferred from herbarium specimens and using environmental predictors identified as casual cues of phenology, in space. 
+
+Disciplines which straddle ecology and agriculture, such as wildland seed harvest, require useful models of major phenological events (flowering, and fruit dispersal) to optimize the detection of populations, estimates of census sizes, and the eventual collection of native seed.  
+Hererin we use GAMM's to model phenophases, inferred from herbarium specimens and using environmental predictors identified as casual cues of phenology, in space. 
 Our necessity to more accurately understand the phenology of species arose from our goal of native seed collection for both native plant germplasm development, and *ex-situ* conservation. 
 The identification of putative populations with enough individuals to warrant germplasm development is a time consuming process, because most plant species can only be identified when they have reproductive organs, and a populations ability to support these collections varies wildly with the years weather, pathogen load, and various stochastic processes. 
 The collection of seeds, which is generally occurring for both many species and many populations each year, is challenged by both the need for crews to collect from other species and the natural dispersal of seeds - simply put *timing is everything*.  
@@ -29,7 +31,7 @@ The collection of seeds, which is generally occurring for both many species and 
 Species records were derived from the Symbiota herbarium portal for all years from 1981-2021, these years reflected the climate means used as independent variables (ridigbio). 
 All records were downloaded, and the records in the 2.5% Day of Year (DOY) quantile were manually reviewed. 
 These early records were reviewed because novice collectors, especially with graminoids, may actually collect material without reproductive organs yet reaching anthesis ('in bud').
-The later records were reviewed because collectors may have collections of individuals entirely post-anthesis - a situation very common with certain clades where species are commonly distinguished by morphological characteristics of their fruits (e.g. the Leguminosae). 
+The later records were reviewed because collectors may have collections of individuals entirely post-anthesis - a situation very common with certain clades where species are commonly distinguished by morphological characteristics of their fruits (e.g. the Fabaceae or Leguminosae). 
 In both scenarios analysts proceeded towards the mean of the distribution until they encountered 5 consecutive sheets with the desired phenophase.  
 
 Independent variables reflected climate, and landform and soil parameters which modulate soil moisture. 
