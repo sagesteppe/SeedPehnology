@@ -243,7 +243,7 @@ Perform scoring on species with lower levels of importance
 ```{r}
 spps_scored <- read.csv('../data/processed/high_priority_sheets-scored.csv') %>% 
   distinct(scntfcnm) %>% 
-  pull(scntfcnm)
+  pull(scntfcnm) 
 
 specs1 <- st_read('../data/processed/high_priority_sheets/high_priority_sheets.shp',
                   quiet = T) %>% 
@@ -278,7 +278,7 @@ write.csv(specs3, '../data/processed/low_priority_sheets.csv', row.names = F, )
 
 ### Re-check density curves after manual cleaning again.
 
-Another iterative check. If \>50% of records for some species are still outside of anthesis, we will grab the first/last 10% of records, remove those which have been scored (either \~2.5% or \~5%), and score a final time.
+Another iterative check. If >50% of records for some species are still outside of anthesis, we will grab the first andlast 10% of records, remove those which have been scored (either ~2.5% or ~5%), and score a final time.
 
 ```{r write out training data, eval = F}
 
@@ -450,7 +450,6 @@ lapply(specimens, pheno_abs_writer)
 
 
 
-
 #### Perform scoring for lowest priority species
 some species were skipped in the above steps...
 
@@ -520,7 +519,9 @@ last_species <- read.csv('../data/raw/2024sos_species.csv') %>%
   distinct(taxon) %>% 
   filter(! taxon %in% c(modelled))
 
-specs1 <- st_read('../data/processed/lowest_priority_sheets/lowest_priority_sheets.shp', quiet = TRUE) %>% 
+specs1 <- st_read(
+  '../data/processed/lowest_priority_sheets/lowest_priority_sheets.shp',
+  quiet = TRUE) %>% 
   distinct(scntfcnm) %>% 
   pull(scntfcnm) 
 specs1 <- gsub(' ', '_', specs1)
@@ -570,7 +571,7 @@ sf::st_write(specs1,
 
 
 
-```{r write out conflicted things for idigbio team}
+```{r write out conflicted things for idigbio team, eval = F}
 
 read.csv('../data/processed/high_priority_sheets-scored.csv')
 

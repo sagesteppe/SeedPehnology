@@ -11,8 +11,6 @@ vars <- vars[,2:17]
 vars <- vars[ complete.cases(vars), ]
 pca <- prcomp(vars)
 
-plot(pca)
-
 factoextra::fviz_eig(pca) # very simple ! all variables so correlated 
 # the first dimension contains all of the info !
 factoextra::fviz_pca_var(pca,

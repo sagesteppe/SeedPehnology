@@ -394,12 +394,12 @@ windows of phenophases; hence these recent innovations in crop science
 are difficult to transfer to wildland settings.</p>
 <p>The number of papers attempting to predict flowering events in an
 individual year, across geographically large portions of a species range
-are fewer (<span class="citation">@hodgson2011predicting</span>).
-Attempting to model these events are complicated because not only are
-responses of individual species idiosyncratic to climate change, the
-response of populations varies across species ranges, due not only to
-differing levels of climate change, but to existing broad environmental
-climate (<span class="citation">@park2019herbarium</span>, <span class="citation">@park2023complex</span>). Generalized Additive Mixed
+are fewer than either of the above use-cases (<span class="citation">@hodgson2011predicting</span>). Attempting to model
+these events are complicated because not only are the responses of
+individual species idiosyncratic to climate change, the response of
+populations varies across species ranges, due not only to differing
+levels of climate change, but to existing broad environmental climate
+(<span class="citation">@park2019herbarium</span>, <span class="citation">@park2023complex</span>). Generalized Additive Mixed
 Models (GAMM’s) are often used to document a phenophase because a single
 model can have their splines fit to both initiation, peak, and cessation
 of an phase, using a single or multiple independent variables - a
@@ -407,11 +407,15 @@ limitation of several other methods of estimation (<span class="citation">@polan
 independent variable(s) alongside GAMM’s ability to incorporate an
 error-correlation structure which accommodates spatial autocorrelation
 allows them to model the phenological parameters of a species across
-it’s geographic and concomitant environmental range.</p>
-<p>Related disciplines, such as wildland seed harvest, require useful
-models of major phenological events (flowering, and fruit dispersal) to
-optimize the detection of populations, estimates of census sizes, and
-the eventual collection of native seed.<br />
+it’s geographic and concomitant environmental range. However, the data
+sets which cover the wide range of species which may be desired to model
+are few, with herbaria and citizen science initiatives being the two
+largest sources.</p>
+<p>Disciplines which straddle ecology and agriculture, such as wildland
+seed harvest, require useful models of major phenological events
+(flowering, and fruit dispersal) to optimize the detection of
+populations, estimates of census sizes, and the eventual collection of
+native seed.<br />
 Hererin we use GAMM’s to model phenophases, inferred from herbarium
 specimens and using environmental predictors identified as casual cues
 of phenology, in space. Our necessity to more accurately understand the
@@ -442,9 +446,119 @@ reproductive organs yet reaching anthesis (‘in bud’). The later records
 were reviewed because collectors may have collections of individuals
 entirely post-anthesis - a situation very common with certain clades
 where species are commonly distinguished by morphological
-characteristics of their fruits (e.g. the Leguminosae). In both
-scenarios analysts proceeded towards the mean of the distribution until
-they encountered 5 consecutive sheets with the desired phenophase.</p>
+characteristics of their fruits (e.g. the Fabaceae or Leguminosae). In
+both scenarios analysts proceeded towards the mean of the distribution
+until they encountered 5 consecutive sheets with the desired
+phenophase.</p>
+<table>
+<colgroup>
+<col width="4%" />
+<col width="50%" />
+<col width="33%" />
+<col width="11%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center">Layer</th>
+<th align="center">Description</th>
+<th align="center">Source</th>
+<th align="center">Abbrev</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">1.</td>
+<td align="center">Mean Temperature of Warmest Quarter (BIO10)</td>
+<td align="center">Chelsa</td>
+<td align="center">bio10</td>
+</tr>
+<tr class="even">
+<td align="center">2.</td>
+<td align="center">Precipitation of Driest Month (BIO14)</td>
+<td align="center">Chelsa</td>
+<td align="center">bio14</td>
+</tr>
+<tr class="odd">
+<td align="center">3.</td>
+<td align="center">Mean Monthly vapour pressure deficit (vpd)</td>
+<td align="center">Chelsa</td>
+<td align="center">vpd_mean</td>
+</tr>
+<tr class="even">
+<td align="center">4.</td>
+<td align="center">Heat accumulation of Degree-days above 0C (gdd0)</td>
+<td align="center">Chelsa</td>
+<td align="center">gdd5</td>
+</tr>
+<tr class="odd">
+<td align="center">5.</td>
+<td align="center">First growing degree day above 0C (gdgfgd0)</td>
+<td align="center">Chelsa</td>
+<td align="center">gdgfgd5</td>
+</tr>
+<tr class="even">
+<td align="center">6.</td>
+<td align="center">Number of Degree-days above 0C (ngd0)</td>
+<td align="center">Chelsa</td>
+<td align="center">ngd5</td>
+</tr>
+<tr class="odd">
+<td align="center">7.</td>
+<td align="center">Heat accumulation of Degree-days above 5C (gdd5)</td>
+<td align="center">Chelsa</td>
+<td align="center">gdd5</td>
+</tr>
+<tr class="even">
+<td align="center">8.</td>
+<td align="center">First growing degree day above 5C (gdgfgd5)</td>
+<td align="center">Chelsa</td>
+<td align="center">gdgfgd5</td>
+</tr>
+<tr class="odd">
+<td align="center">9.</td>
+<td align="center">Number of Degree-days above 5C (ngd5)</td>
+<td align="center">Chelsa</td>
+<td align="center">ngd5</td>
+</tr>
+<tr class="even">
+<td align="center">10.</td>
+<td align="center">Heat accumulation of Degree-days above 10C
+(gdd10)</td>
+<td align="center">Chelsa</td>
+<td align="center">gdd10</td>
+</tr>
+<tr class="odd">
+<td align="center">11.</td>
+<td align="center">First growing degree day above 10C (gdgfgd10)</td>
+<td align="center">Chelsa</td>
+<td align="center">gdgfgd10</td>
+</tr>
+<tr class="even">
+<td align="center">12.</td>
+<td align="center">Number of Degree-days above 10C (ngd10)</td>
+<td align="center">Chelsa</td>
+<td align="center">ngd10</td>
+</tr>
+<tr class="odd">
+<td align="center">13.</td>
+<td align="center">Net Primary Productivity (npp)</td>
+<td align="center">Chelsa</td>
+<td align="center">npp</td>
+</tr>
+<tr class="even">
+<td align="center">14.</td>
+<td align="center">Soil Bulk Density</td>
+<td align="center">SoilGrids</td>
+<td align="center">sbd</td>
+</tr>
+<tr class="odd">
+<td align="center">15.</td>
+<td align="center">Compound Topographic Index</td>
+<td align="center">terra</td>
+<td align="center">cti</td>
+</tr>
+</tbody>
+</table>
 <p>Independent variables reflected climate, and landform and soil
 parameters which modulate soil moisture. The climate variables from
 CHELSA, were 1981-2010 annual means, for Growing Degree Days (GDD) heat
@@ -455,7 +569,7 @@ month). Soil bulk density, which is shown to reflect the amount of
 air/water space in soil, was downloaded from SoilGrids. Compound
 Topographic Index (cti), which describes the potential of an area to
 accumulate soil moisture via a combination of its landform position,
-slope, aspect, and size of it’s upslope catchment area, was downloaded
+slope, aspect, and size of it’s up-slope catchment area, was downloaded
 from geomorpho90m and resampled from 90m to the 250m resolution of the
 previous data sets.</p>
 <p>GAM’s require data on when a species was <strong>not</strong>

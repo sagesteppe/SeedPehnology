@@ -26,7 +26,7 @@ The collection of seeds, which is generally occurring for both many species and 
 
 # Methods
 
-## Data Sources
+## Data Sources & Cleaning
 
 Species records were derived from the Symbiota herbarium portal for all years from 1981-2021, these years reflected the climate means used as independent variables (ridigbio). 
 All records were downloaded, and the records in the 2.5% Day of Year (DOY) quantile were manually reviewed. 
@@ -34,10 +34,29 @@ These early records were reviewed because novice collectors, especially with gra
 The later records were reviewed because collectors may have collections of individuals entirely post-anthesis - a situation very common with certain clades where species are commonly distinguished by morphological characteristics of their fruits (e.g. the Fabaceae or Leguminosae). 
 In both scenarios analysts proceeded towards the mean of the distribution until they encountered 5 consecutive sheets with the desired phenophase.  
 
+| Layer |                       Description                       |              Source                   |     Abbrev   |      
+| :---: | :-----------------------------------------------------: | :-----------------------------------: | :----------: | 
+|  1.   |        Mean Temperature of Warmest Quarter (BIO10)      |              Chelsa                   |     bio10    |
+|  2.   |             Precipitation of Driest Month (BIO14)       |              Chelsa                   |     bio14    |
+|  3.   |      Mean Monthly vapour pressure deficit (vpd)         |              Chelsa                   |   vpd_mean   |
+|  4.   |     Heat accumulation of  Degree-days above 0C (gdd0)   |              Chelsa                   |     gdd5     |
+|  5.   |         First growing degree day above 0C (gdgfgd0)     |              Chelsa                   |    gdgfgd5   |
+|  6.   |           Number of Degree-days above 0C (ngd0)         |              Chelsa                   |     ngd5     |
+|  7.   |     Heat accumulation of  Degree-days above 5C (gdd5)   |              Chelsa                   |     gdd5     |
+|  8.   |         First growing degree day above 5C (gdgfgd5)     |              Chelsa                   |    gdgfgd5   |
+|  9.   |           Number of Degree-days above 5C (ngd5)         |              Chelsa                   |     ngd5     |
+| 10.   |   Heat accumulation of  Degree-days above 10C (gdd10)   |              Chelsa                   |     gdd10    |
+| 11.   |         First growing degree day above 10C (gdgfgd10)   |              Chelsa                   |   gdgfgd10   |
+| 12.   |         Number of Degree-days above 10C (ngd10)         |              Chelsa                   |     ngd10    |
+| 13.   |             Net Primary Productivity (npp)              |              Chelsa                   |      npp     |
+| 14.   |                       Soil Bulk Density                 |             SoilGrids                 |      sbd     |
+| 15.   |                  Compound Topographic Index             |               terra                   |      cti     |
+
+
 Independent variables reflected climate, and landform and soil parameters which modulate soil moisture. 
 The climate variables from CHELSA, were 1981-2010 annual means, for Growing Degree Days (GDD) heat sums (at 0°C, 5°C, 10°C), first (gdgfgd) and last (gddlgd) GDD DOY, vapor pressure deficit (vpd), Bio10 (mean daily mean air temperatures of the warmest quarter), and Bio14 (precipitation amount of the driest month). 
 Soil bulk density, which is shown to reflect the amount of air/water space in soil, was downloaded from SoilGrids. 
-Compound Topographic Index (cti), which describes the potential of an area to accumulate soil moisture via a combination of its landform position, slope, aspect, and size of it's upslope catchment area, was downloaded from geomorpho90m and resampled from 90m to the 250m resolution of the previous data sets. 
+Compound Topographic Index (cti), which describes the potential of an area to accumulate soil moisture via a combination of its landform position, slope, aspect, and size of it's up-slope catchment area, was downloaded from geomorpho90m and resampled from 90m to the 250m resolution of the previous data sets. 
 
 GAM's require data on when a species was **not** flowering in order to develop splines for the onset of flowering. 
 Pseudo-floral absences were created using known sites, and their observed phenology. 
@@ -69,5 +88,24 @@ Rasters which had fewer than 5% of their total cells classified as having a >50%
 
 ## Interpretation 
 
+# Results
 
+## Herbarium Records 
+
+How many records were reveiwed? 
+What percent of records were not in anthesis? 
+Does this vary by functional group (Shrub, Grass, Forb)
+Mustards - Fabaceae - more records without flowers? 
+
+## Modelling 
+
+How many models converged? 
+Which variables ended up making it to the top models? Is this different than species mean LATITUDE??? 
+
+## Ground Verification 
+
+What percent of scouting records phen for flowering were within bounds? 
+When was peak % flowering observed? 
+
+# Discussion
 
