@@ -17,7 +17,7 @@ t <- read.csv('../data/SOS/Scouting.csv') %>%
   sDate_join = as.numeric(scoutDate), .before = geometry) |>
   filter(taxa %in% modelled) %>%
   # we will remove Phacelia crenulata and Eriogonum fusiforme which did not flower this year #
-  filter(!taxa %in% c('Phacelia_crenulata', 'Eriogonum_fusiforme')) 
+  filter(!taxa %in% c('Phacelia_crenulata', 'Eriogonum_fusiforme', 'Eriogonum_shockleyi')) 
 
 # load and extract raster values to ground verified point.
 
@@ -72,22 +72,31 @@ extractPredictions <- function(x){
       doy = colnames(extracted_values),
       prob = extracted_values[,1]
     )
+    
+    
+    # combbine the extracted values with the features of the input data set.
+    x <- dplyr::bind_cols(x, extracted_values)
+    
     # if any of the rows are NA, use a feature engineered probability of flowering for them
     
-    if(any(is.na(extracted_values$prob))){
-      
+    if(any(is.na(x$prob))){
+
       # now proceed row wise 
+      need_imputed <- x[which(is.na(x$prob)),]
       
+      for(i in 1:nrow(need_imputed)){
       # mask any raster sites > 10k from population #
-      mask <- sf::st_buffer(x, 10000)
-      surface_m <- terra::mask(surface, mask, inverse = TRUE)
+      mask <- sf::st_buffer(need_imputed[i,], 10000)
+      surface_m <- terra::mask(surface, mask, inverse = FALSE)
+      m <- terra::global(surface_m, mean, na.rm = TRUE)
+      need_imputed[i,'prob'] <- m 
+      }
       
-      m <- mean(terra::spatSample(
-        surface_m, size = 250, method = 'random', na.rm = TRUE)[,1])
-      extracted_values[which(is.na(extracted_values$prob)),'prob'] <- m }
-    
-      # write out results 
-      x <- dplyr::bind_cols(x, extracted_values)
+      x <- dplyr::bind_rows(
+        x[which(!is.na(x$prob)),],
+        need_imputed)
+      
+    }
       return(x)
   }
   
@@ -105,7 +114,9 @@ extractPredictions <- function(x){
     ebd <- dplyr::bind_rows(ebd, noRasters) |>
       dplyr::arrange(scoutDate)} else {
       ebd <- noRasters
-    }}
+      }}
+  
+  # now make values outside of the range 0-1 - 0 these are our not-flowering dates. 
   return(ebd)
   
 }
@@ -114,3 +125,4 @@ extractPredictions <- function(x){
 dat <- split(t, f = t$taxa)
 ob <- lapply(dat, extractPredictions) |>
   bind_rows() 
+
